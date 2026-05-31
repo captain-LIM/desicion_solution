@@ -4,6 +4,7 @@ const {
   createDecision,
   getHistory,
   getDecisionById,
+  toggleBookmark,
   reviewDecision,
   getPendingReviews,
   deleteDecision,
@@ -13,6 +14,7 @@ router.post('/', createDecision);
 router.get('/history', getHistory);
 router.get('/pending-reviews', getPendingReviews);
 router.get('/:id', getDecisionById);
+router.patch('/:id/bookmark', toggleBookmark);
 router.patch('/:id/review', reviewDecision);
 router.delete('/:id', deleteDecision);
 

@@ -1,13 +1,27 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { Trash2, ChevronDown, ChevronUp, CheckCircle2, Loader2, ClockIcon, InboxIcon, ThumbsUp, ThumbsDown, RotateCcw } from 'lucide-react';
-import { formatDate } from '../lib/utils';
+import { Trash2, ChevronDown, ChevronUp, CheckCircle2, Loader2, ClockIcon, InboxIcon, ThumbsUp, ThumbsDown, RotateCcw, Bookmark, BookmarkCheck } from 'lucide-react';
+import { formatDate, cn } from '../lib/utils';
 import ReviewModal from '../components/ReviewModal';
 
-function HistoryCard({ item, onDelete, onReviewed }) {
+function HistoryCard({ item, onDelete, onReviewed, onBookmarkToggle }) {
   const [open, setOpen] = useState(false);
   const [showReview, setShowReview] = useState(false);
+  const [bookmarkLoading, setBookmarkLoading] = useState(false);
+
+  const handleBookmark = async (e) => {
+    e.stopPropagation();
+    setBookmarkLoading(true);
+    try {
+      const { data } = await axios.patch(`/api/decisions/${item.id}/bookmark`);
+      onBookmarkToggle(item.id, data.is_bookmarked);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setBookmarkLoading(false);
+    }
+  };
 
   const isOldEnough = (new Date() - new Date(item.created_at)) >= 3 * 24 * 60 * 60 * 1000;
   const needsReview = isOldEnough && item.satisfaction === null;
@@ -39,10 +53,22 @@ function HistoryCard({ item, onDelete, onReviewed }) {
               {needsReview && <span className="text-amber-400">· 재검토 필요</span>}
             </div>
           </div>
-          <div className="flex items-center gap-2 shrink-0">
+          <div className="flex items-center gap-1.5 shrink-0">
             <span className="rounded-full border border-violet-500/30 bg-violet-500/10 px-2.5 py-0.5 text-xs text-violet-300">
               {item.recommended_option?.slice(0, 10)}{item.recommended_option?.length > 10 ? '...' : ''}
             </span>
+            <button
+              onClick={handleBookmark}
+              disabled={bookmarkLoading}
+              className={cn(
+                'flex h-7 w-7 items-center justify-center rounded-lg transition',
+                item.is_bookmarked
+                  ? 'text-amber-400 hover:bg-amber-500/10'
+                  : 'text-gray-600 hover:bg-white/5 hover:text-amber-400'
+              )}
+            >
+              {item.is_bookmarked ? <BookmarkCheck size={14} /> : <Bookmark size={14} />}
+            </button>
             <button
               onClick={(e) => { e.stopPropagation(); onDelete(item.id); }}
               className="flex h-7 w-7 items-center justify-center rounded-lg text-gray-600 transition hover:bg-red-500/10 hover:text-red-400"
@@ -135,6 +161,7 @@ function HistoryCard({ item, onDelete, onReviewed }) {
 export default function History() {
   const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [filter, setFilter] = useState('all');
   const navigate = useNavigate();
 
   const fetchHistory = async () => {
@@ -159,16 +186,24 @@ export default function History() {
   };
 
   const handleReviewed = (id, satisfaction) => {
-    setHistory((prev) =>
-      prev.map((h) => h.id === id ? { ...h, satisfaction } : h)
-    );
+    setHistory((prev) => prev.map((h) => h.id === id ? { ...h, satisfaction } : h));
+  };
+
+  const handleBookmarkToggle = (id, is_bookmarked) => {
+    setHistory((prev) => prev.map((h) => h.id === id ? { ...h, is_bookmarked } : h));
   };
 
   useEffect(() => { fetchHistory(); }, []);
 
+  const filtered = filter === 'bookmarked'
+    ? history.filter((h) => h.is_bookmarked)
+    : history;
+
+  const bookmarkCount = history.filter((h) => h.is_bookmarked).length;
+
   return (
     <main className="mx-auto max-w-2xl px-4 py-12">
-      <div className="mb-8 flex items-center justify-between">
+      <div className="mb-6 flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-white">결정 히스토리</h1>
           <p className="mt-1 text-sm text-gray-500">과거에 내린 결정들을 확인하세요</p>
@@ -181,29 +216,63 @@ export default function History() {
         </button>
       </div>
 
+      {/* 필터 탭 */}
+      {!loading && history.length > 0 && (
+        <div className="mb-5 flex gap-2">
+          <button
+            onClick={() => setFilter('all')}
+            className={cn(
+              'rounded-xl px-4 py-2 text-sm font-medium transition',
+              filter === 'all'
+                ? 'bg-violet-600/20 text-violet-300'
+                : 'text-gray-500 hover:bg-white/5 hover:text-gray-300'
+            )}
+          >
+            전체 {history.length}
+          </button>
+          <button
+            onClick={() => setFilter('bookmarked')}
+            className={cn(
+              'flex items-center gap-1.5 rounded-xl px-4 py-2 text-sm font-medium transition',
+              filter === 'bookmarked'
+                ? 'bg-amber-500/20 text-amber-300'
+                : 'text-gray-500 hover:bg-white/5 hover:text-gray-300'
+            )}
+          >
+            <BookmarkCheck size={14} />
+            북마크 {bookmarkCount}
+          </button>
+        </div>
+      )}
+
       {loading ? (
         <div className="flex items-center justify-center py-20">
           <Loader2 size={28} className="animate-spin text-violet-400" />
         </div>
-      ) : history.length === 0 ? (
+      ) : filtered.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-20 text-center">
           <InboxIcon size={40} className="mb-4 text-gray-600" />
-          <p className="text-gray-400">아직 결정 기록이 없습니다</p>
-          <button
-            onClick={() => navigate('/')}
-            className="mt-4 rounded-xl border border-violet-500/30 px-4 py-2 text-sm text-violet-400 transition hover:bg-violet-500/10"
-          >
-            첫 번째 결정 해보기
-          </button>
+          <p className="text-gray-400">
+            {filter === 'bookmarked' ? '북마크된 결정이 없습니다' : '아직 결정 기록이 없습니다'}
+          </p>
+          {filter === 'all' && (
+            <button
+              onClick={() => navigate('/')}
+              className="mt-4 rounded-xl border border-violet-500/30 px-4 py-2 text-sm text-violet-400 transition hover:bg-violet-500/10"
+            >
+              첫 번째 결정 해보기
+            </button>
+          )}
         </div>
       ) : (
         <div className="space-y-3">
-          {history.map((item) => (
+          {filtered.map((item) => (
             <HistoryCard
               key={item.id}
               item={item}
               onDelete={handleDelete}
               onReviewed={handleReviewed}
+              onBookmarkToggle={handleBookmarkToggle}
             />
           ))}
         </div>

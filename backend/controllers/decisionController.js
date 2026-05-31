@@ -125,6 +125,19 @@ async function getDecisionById(req, res) {
   }
 }
 
+async function toggleBookmark(req, res) {
+  const { id } = req.params;
+  try {
+    const [rows] = await pool.execute('SELECT is_bookmarked FROM decisions WHERE id = ?', [id]);
+    if (rows.length === 0) return res.status(404).json({ error: '결정을 찾을 수 없습니다.' });
+    const next = rows[0].is_bookmarked ? 0 : 1;
+    await pool.execute('UPDATE decisions SET is_bookmarked = ? WHERE id = ?', [next, id]);
+    res.json({ is_bookmarked: next });
+  } catch (err) {
+    res.status(500).json({ error: '북마크 처리 중 오류가 발생했습니다.' });
+  }
+}
+
 async function reviewDecision(req, res) {
   const { id } = req.params;
   const { satisfaction, review_note } = req.body;
@@ -169,4 +182,4 @@ async function deleteDecision(req, res) {
   }
 }
 
-module.exports = { createDecision, getHistory, getDecisionById, reviewDecision, getPendingReviews, deleteDecision };
+module.exports = { createDecision, getHistory, getDecisionById, toggleBookmark, reviewDecision, getPendingReviews, deleteDecision };

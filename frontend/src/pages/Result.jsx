@@ -1,7 +1,8 @@
 import { useLocation, useNavigate } from 'react-router-dom';
-import { CheckCircle2, RotateCcw, History, Sparkles, MessageSquareText, Link2, Copy, Share2, Check } from 'lucide-react';
-import { formatDate } from '../lib/utils';
+import { CheckCircle2, RotateCcw, History, Sparkles, MessageSquareText, Link2, Copy, Share2, Check, Bookmark, BookmarkCheck } from 'lucide-react';
+import { formatDate, cn } from '../lib/utils';
 import { useState } from 'react';
+import axios from 'axios';
 
 function ShareButtons({ result }) {
   const [copiedLink, setCopiedLink] = useState(false);
@@ -33,37 +34,64 @@ function ShareButtons({ result }) {
   };
 
   return (
-    <div className="mb-6 rounded-2xl border border-white/10 bg-white/5 p-5">
-      <div className="mb-3 flex items-center gap-2">
-        <Share2 size={15} className="text-gray-400" />
-        <p className="text-sm font-semibold text-gray-300">결과 공유</p>
-      </div>
-      <div className="flex flex-wrap gap-2">
+    <>
+      <button
+        onClick={handleCopyLink}
+        className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-gray-300 transition hover:bg-white/10 hover:text-white"
+      >
+        {copiedLink ? <Check size={15} className="text-green-400" /> : <Link2 size={15} />}
+        {copiedLink ? '링크 복사됨!' : '링크 복사'}
+      </button>
+      <button
+        onClick={handleCopyText}
+        className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-gray-300 transition hover:bg-white/10 hover:text-white"
+      >
+        {copiedText ? <Check size={15} className="text-green-400" /> : <Copy size={15} />}
+        {copiedText ? '텍스트 복사됨!' : '텍스트 복사'}
+      </button>
+      {navigator.share && (
         <button
-          onClick={handleCopyLink}
-          className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-gray-300 transition hover:bg-white/10 hover:text-white"
+          onClick={handleNativeShare}
+          className="flex items-center gap-2 rounded-xl bg-violet-600/20 border border-violet-500/30 px-4 py-2.5 text-sm text-violet-300 transition hover:bg-violet-600/30"
         >
-          {copiedLink ? <Check size={15} className="text-green-400" /> : <Link2 size={15} />}
-          {copiedLink ? '링크 복사됨!' : '링크 복사'}
+          <Share2 size={15} />
+          공유하기
         </button>
-        <button
-          onClick={handleCopyText}
-          className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-gray-300 transition hover:bg-white/10 hover:text-white"
-        >
-          {copiedText ? <Check size={15} className="text-green-400" /> : <Copy size={15} />}
-          {copiedText ? '텍스트 복사됨!' : '텍스트 복사'}
-        </button>
-        {navigator.share && (
-          <button
-            onClick={handleNativeShare}
-            className="flex items-center gap-2 rounded-xl bg-violet-600/20 border border-violet-500/30 px-4 py-2.5 text-sm text-violet-300 transition hover:bg-violet-600/30"
-          >
-            <Share2 size={15} />
-            공유하기
-          </button>
-        )}
-      </div>
-    </div>
+      )}
+    </>
+  );
+}
+
+function BookmarkButton({ result }) {
+  const [bookmarked, setBookmarked] = useState(!!result.is_bookmarked);
+  const [loading, setLoading] = useState(false);
+
+  const handleToggle = async () => {
+    setLoading(true);
+    try {
+      const { data } = await axios.patch(`/api/decisions/${result.id}/bookmark`);
+      setBookmarked(!!data.is_bookmarked);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <button
+      onClick={handleToggle}
+      disabled={loading}
+      className={cn(
+        'flex items-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-medium transition',
+        bookmarked
+          ? 'border-amber-500/40 bg-amber-500/15 text-amber-300 hover:bg-amber-500/20'
+          : 'border-white/10 bg-white/5 text-gray-400 hover:bg-white/10 hover:text-amber-300'
+      )}
+    >
+      {bookmarked ? <BookmarkCheck size={15} className="text-amber-400" /> : <Bookmark size={15} />}
+      {bookmarked ? '북마크됨' : '북마크'}
+    </button>
   );
 }
 
@@ -141,8 +169,17 @@ export default function Result() {
         <p className="leading-relaxed text-gray-300">{result.explanation}</p>
       </div>
 
-      {/* 공유 버튼 */}
-      <ShareButtons result={result} />
+      {/* 공유 + 북마크 버튼 */}
+      <div className="mb-6 rounded-2xl border border-white/10 bg-white/5 p-5">
+        <div className="mb-3 flex items-center gap-2">
+          <Share2 size={15} className="text-gray-400" />
+          <p className="text-sm font-semibold text-gray-300">저장 및 공유</p>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <BookmarkButton result={result} />
+          <ShareButtons result={result} />
+        </div>
+      </div>
 
       {/* 하단 버튼 */}
       <div className="flex gap-3">
