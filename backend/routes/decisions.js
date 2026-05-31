@@ -1,21 +1,17 @@
 const express = require('express');
 const router = express.Router();
 const {
-  createDecision,
-  getHistory,
-  getDecisionById,
-  toggleBookmark,
-  reviewDecision,
-  getPendingReviews,
-  deleteDecision,
+  createDecision, getHistory, getDecisionById,
+  toggleBookmark, reviewDecision, getPendingReviews, deleteDecision,
 } = require('../controllers/decisionController');
+const { authMiddleware, optionalAuth } = require('../middleware/auth');
 
-router.post('/', createDecision);
-router.get('/history', getHistory);
-router.get('/pending-reviews', getPendingReviews);
-router.get('/:id', getDecisionById);
-router.patch('/:id/bookmark', toggleBookmark);
-router.patch('/:id/review', reviewDecision);
-router.delete('/:id', deleteDecision);
+router.post('/', authMiddleware, createDecision);
+router.get('/history', authMiddleware, getHistory);
+router.get('/pending-reviews', authMiddleware, getPendingReviews);
+router.get('/:id', optionalAuth, getDecisionById);
+router.patch('/:id/bookmark', authMiddleware, toggleBookmark);
+router.patch('/:id/review', authMiddleware, reviewDecision);
+router.delete('/:id', authMiddleware, deleteDecision);
 
 module.exports = router;

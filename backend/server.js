@@ -3,6 +3,7 @@ const cors = require('cors');
 require('dotenv').config();
 
 const decisionsRouter = require('./routes/decisions');
+const authRouter = require('./routes/auth');
 
 const app = express();
 
@@ -13,6 +14,7 @@ app.use((req, res, next) => {
   next();
 });
 
+app.use('/api/auth', authRouter);
 app.use('/api/decisions', decisionsRouter);
 
 app.get('/health', (req, res) => res.json({ status: 'ok' }));

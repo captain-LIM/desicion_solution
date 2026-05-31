@@ -1,22 +1,27 @@
 import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
 import Navbar from './components/Navbar';
+import ProtectedRoute from './components/ProtectedRoute';
 import Home from './pages/Home';
 import Result from './pages/Result';
 import History from './pages/History';
 import Share from './pages/Share';
+import Login from './pages/Login';
+import Register from './pages/Register';
 
 function Layout() {
   const { pathname } = useLocation();
-  const isShare = pathname.startsWith('/share/');
+  const hideNav = pathname.startsWith('/share/') || pathname === '/login' || pathname === '/register';
 
   return (
     <div className="min-h-screen bg-[#f8f8fc] text-gray-900 dark:bg-[#0f0f13] dark:text-white transition-colors duration-200">
-      {!isShare && <Navbar />}
+      {!hideNav && <Navbar />}
       <Routes>
-        <Route path="/" element={<Home />} />
-        <Route path="/result" element={<Result />} />
-        <Route path="/history" element={<History />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
         <Route path="/share/:id" element={<Share />} />
+        <Route path="/" element={<ProtectedRoute><Home /></ProtectedRoute>} />
+        <Route path="/result" element={<ProtectedRoute><Result /></ProtectedRoute>} />
+        <Route path="/history" element={<ProtectedRoute><History /></ProtectedRoute>} />
       </Routes>
     </div>
   );

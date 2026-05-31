@@ -52,8 +52,8 @@ ${optionsList}
       await conn.beginTransaction();
 
       const [result] = await conn.execute(
-        'INSERT INTO decisions (scenario, emotional_state, recommended_option, explanation, category) VALUES (?, ?, ?, ?, ?)',
-        [scenario, emotional_state || null, parsed.recommended_option, parsed.explanation, category || null]
+        'INSERT INTO decisions (scenario, emotional_state, recommended_option, explanation, category, user_id) VALUES (?, ?, ?, ?, ?, ?)',
+        [scenario, emotional_state || null, parsed.recommended_option, parsed.explanation, category || null, req.user.id]
       );
       const decisionId = result.insertId;
 
@@ -112,7 +112,10 @@ async function getHistory(req, res) {
       params.push(date_to);
     }
 
-    const where = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
+    conditions.push('user_id = ?');
+    params.push(req.user.id);
+
+    const where = `WHERE ${conditions.join(' AND ')}`;
     const [decisions] = await pool.query(
       `SELECT * FROM decisions ${where} ORDER BY created_at DESC LIMIT 100`,
       params
@@ -188,9 +191,10 @@ async function getPendingReviews(req, res) {
     const [rows] = await pool.execute(
       `SELECT id, scenario, recommended_option, created_at
        FROM decisions
-       WHERE satisfaction IS NULL
+       WHERE user_id = ? AND satisfaction IS NULL
          AND created_at <= NOW() - INTERVAL 3 DAY
-       ORDER BY created_at DESC`
+       ORDER BY created_at DESC`,
+      [req.user.id]
     );
     res.json(rows);
   } catch (err) {
