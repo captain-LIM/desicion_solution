@@ -107,6 +107,24 @@ async function getHistory(req, res) {
   }
 }
 
+async function getDecisionById(req, res) {
+  const { id } = req.params;
+  try {
+    const [rows] = await pool.execute('SELECT * FROM decisions WHERE id = ?', [id]);
+    if (rows.length === 0) return res.status(404).json({ error: '결정을 찾을 수 없습니다.' });
+
+    const decision = rows[0];
+    const [opts] = await pool.execute(
+      'SELECT option_text FROM options WHERE decision_id = ? ORDER BY order_index',
+      [id]
+    );
+    decision.options = opts.map((o) => o.option_text);
+    res.json(decision);
+  } catch (err) {
+    res.status(500).json({ error: '데이터를 불러오는 중 오류가 발생했습니다.' });
+  }
+}
+
 async function deleteDecision(req, res) {
   const { id } = req.params;
   try {
@@ -117,4 +135,4 @@ async function deleteDecision(req, res) {
   }
 }
 
-module.exports = { createDecision, getHistory, deleteDecision };
+module.exports = { createDecision, getHistory, getDecisionById, deleteDecision };
