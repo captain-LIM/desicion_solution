@@ -91,7 +91,7 @@ function HistoryCard({ item, onDelete, onReviewed, onBookmarkToggle }) {
             </div>
             <div>
               <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-gray-400 dark:text-gray-500">AI 추천 이유</p>
-              <p className="text-sm leading-relaxed text-gray-600 dark:text-gray-300">{item.explanation}</p>
+              <p className="text-sm leading-relaxed text-gray-600 dark:text-gray-100">{item.explanation}</p>
             </div>
             {item.emotional_state && (
               <div>

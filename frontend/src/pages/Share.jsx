@@ -87,12 +87,12 @@ export default function Share() {
         </div>
       </div>
 
-      <div className="mb-8 rounded-2xl border border-violet-200 bg-violet-50 p-6 dark:border-violet-500/20 dark:bg-gradient-to-br dark:from-violet-500/10 dark:to-purple-500/5">
+      <div className="mb-8 rounded-2xl border border-violet-200 bg-violet-50 p-6 dark:border-violet-500/30 dark:bg-violet-950/40">
         <div className="mb-3 flex items-center gap-2">
           <MessageSquareText size={16} className="text-violet-600 dark:text-violet-400" />
           <p className="text-sm font-semibold text-violet-700 dark:text-violet-300">AI 추천 이유</p>
         </div>
-        <p className="leading-relaxed text-gray-700 dark:text-gray-300">{result.explanation}</p>
+        <p className="leading-relaxed text-gray-700 dark:text-gray-100">{result.explanation}</p>
       </div>
 
       <div className="flex gap-3">

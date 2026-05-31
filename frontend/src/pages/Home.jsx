@@ -1,7 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { Plus, Trash2, Sparkles, Loader2, Brain } from 'lucide-react';
+import { Plus, Trash2, Sparkles, Loader2, Brain, Fingerprint } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { CATEGORIES } from '../lib/categories';
 import ReviewBanner from '../components/ReviewBanner';
@@ -13,6 +13,13 @@ export default function Home() {
   const [emotionalState, setEmotionalState] = useState('');
   const [category, setCategory] = useState('');
   const [loading, setLoading] = useState(false);
+  const [reviewedCount, setReviewedCount] = useState(0);
+
+  useEffect(() => {
+    axios.get('/api/decisions/stats')
+      .then(({ data }) => setReviewedCount(data.reviewed_count || 0))
+      .catch(() => {});
+  }, []);
   const [error, setError] = useState('');
 
   const addOption = () => { if (options.length < 5) setOptions([...options, '']); };
@@ -52,8 +59,8 @@ export default function Home() {
         {/* 헤더 */}
         <div className="mb-10 text-center">
           <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-violet-400/40 bg-violet-50 px-4 py-1.5 text-sm text-violet-600 dark:border-violet-500/30 dark:bg-violet-500/10 dark:text-violet-300">
-            <Brain size={14} />
-            AI 기반 의사결정 도우미
+            {reviewedCount >= 3 ? <Fingerprint size={14} /> : <Brain size={14} />}
+            {reviewedCount >= 3 ? `개인화 AI (${reviewedCount}개 패턴 학습됨)` : 'AI 기반 의사결정 도우미'}
           </div>
           <h1 className="mb-3 text-4xl font-bold tracking-tight text-gray-900 dark:text-white">
             고민을 해결해드릴게요

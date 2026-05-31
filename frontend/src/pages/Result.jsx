@@ -1,5 +1,5 @@
 import { useLocation, useNavigate } from 'react-router-dom';
-import { CheckCircle2, RotateCcw, History, Sparkles, MessageSquareText, Link2, Copy, Share2, Check, Bookmark, BookmarkCheck } from 'lucide-react';
+import { CheckCircle2, RotateCcw, History, Sparkles, MessageSquareText, Link2, Copy, Share2, Check, Bookmark, BookmarkCheck, Fingerprint } from 'lucide-react';
 import { formatDate, cn } from '../lib/utils';
 import { useState } from 'react';
 import axios from 'axios';
@@ -140,12 +140,25 @@ export default function Result() {
       </div>
 
       {/* AI 설명 */}
-      <div className="mb-6 rounded-2xl border border-violet-200 bg-violet-50 p-6 dark:border-violet-500/20 dark:bg-gradient-to-br dark:from-violet-500/10 dark:to-purple-500/5">
-        <div className="mb-3 flex items-center gap-2">
-          <MessageSquareText size={16} className="text-violet-600 dark:text-violet-400" />
-          <p className="text-sm font-semibold text-violet-700 dark:text-violet-300">AI 추천 이유</p>
+      <div className="mb-6 rounded-2xl border border-violet-200 bg-violet-50 p-6 dark:border-violet-500/30 dark:bg-violet-950/40">
+        <div className="mb-3 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <MessageSquareText size={16} className="text-violet-600 dark:text-violet-400" />
+            <p className="text-sm font-semibold text-violet-700 dark:text-violet-300">AI 추천 이유</p>
+          </div>
+          {result.is_personalized && (
+            <div className="flex items-center gap-1.5 rounded-full border border-violet-300 bg-violet-100 px-2.5 py-1 text-xs font-medium text-violet-700 dark:border-violet-500/40 dark:bg-violet-500/20 dark:text-violet-300">
+              <Fingerprint size={12} />
+              개인화 AI
+            </div>
+          )}
         </div>
-        <p className="leading-relaxed text-gray-700 dark:text-gray-300">{result.explanation}</p>
+        <p className="leading-relaxed text-gray-700 dark:text-gray-100">{result.explanation}</p>
+        {result.is_personalized && (
+          <p className="mt-3 text-xs text-violet-600/70 dark:text-violet-400/70">
+            ✦ 나의 과거 결정 패턴을 분석하여 맞춤 추천했습니다.
+          </p>
+        )}
       </div>
 
       {/* 공유 + 북마크 */}

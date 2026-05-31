@@ -4,6 +4,44 @@ require('dotenv').config();
 
 const OPENROUTER_URL = 'https://openrouter.ai/api/v1/chat/completions';
 
+async function buildPersonalizationContext(userId) {
+  const [reviewed] = await pool.execute(
+    `SELECT d.scenario, d.recommended_option, d.category, d.satisfaction, d.review_note
+     FROM decisions d
+     WHERE d.user_id = ? AND d.satisfaction IS NOT NULL
+     ORDER BY d.created_at DESC LIMIT 15`,
+    [userId]
+  );
+  if (reviewed.length < 3) return { context: '', isPersonalized: false };
+
+  const satisfied = reviewed.filter((r) => r.satisfaction === 1);
+  const unsatisfied = reviewed.filter((r) => r.satisfaction === 0);
+
+  let context = '\n\n[사용자 개인화 정보 - 과거 결정 패턴]\n';
+  context += '아래는 이 사용자의 실제 과거 결정과 만족도입니다. 이 패턴을 반드시 참고하여 추천하세요:\n';
+
+  if (satisfied.length > 0) {
+    context += '\n✅ 만족스러웠던 결정들:\n';
+    satisfied.slice(0, 5).forEach((r) => {
+      const cat = r.category ? `[${r.category}] ` : '';
+      context += `- ${cat}"${r.scenario}" → "${r.recommended_option}" 선택 → 만족\n`;
+      if (r.review_note) context += `  (소감: ${r.review_note})\n`;
+    });
+  }
+
+  if (unsatisfied.length > 0) {
+    context += '\n❌ 아쉬웠던 결정들:\n';
+    unsatisfied.slice(0, 5).forEach((r) => {
+      const cat = r.category ? `[${r.category}] ` : '';
+      context += `- ${cat}"${r.scenario}" → "${r.recommended_option}" 선택 → 아쉬움\n`;
+      if (r.review_note) context += `  (소감: ${r.review_note})\n`;
+    });
+  }
+
+  context += '\n위 패턴을 분석하여 이 사용자에게 최적화된 추천을 해주세요.\n';
+  return { context, isPersonalized: true };
+}
+
 async function createDecision(req, res) {
   const { scenario, options, emotional_state, category } = req.body;
 
@@ -14,9 +52,11 @@ async function createDecision(req, res) {
   const optionsList = options.map((o, i) => `${i + 1}. ${o}`).join('\n');
   const emotionPart = emotional_state ? `\n현재 감정 상태: ${emotional_state}` : '';
 
-  const prompt = `당신은 사용자의 의사결정을 도와주는 AI 어시스턴트입니다.
-사용자의 고민 상황과 선택지를 분석하여 최적의 선택을 추천해주세요.
+  // 개인화 컨텍스트 생성
+  const { context: personalizationContext, isPersonalized } = await buildPersonalizationContext(req.user.id);
 
+  const prompt = `당신은 사용자의 의사결정을 도와주는 AI 어시스턴트입니다.
+사용자의 고민 상황과 선택지를 분석하여 최적의 선택을 추천해주세요.${personalizationContext}
 고민 상황: ${scenario}${emotionPart}
 
 선택지:
@@ -25,7 +65,7 @@ ${optionsList}
 다음 JSON 형식으로만 응답하세요 (다른 텍스트 없이):
 {
   "recommended_option": "추천하는 선택지 텍스트 (원문 그대로)",
-  "explanation": "이 선택을 추천하는 이유를 3-4문장으로 설명"
+  "explanation": "이 선택을 추천하는 이유를 3-4문장으로 설명${isPersonalized ? '. 사용자의 과거 패턴을 반영한 경우 언급해주세요.' : ''}"
 }`;
 
   try {
@@ -74,6 +114,7 @@ ${optionsList}
         options,
         recommended_option: parsed.recommended_option,
         explanation: parsed.explanation,
+        is_personalized: isPersonalized,
       });
     } catch (dbErr) {
       await conn.rollback();
