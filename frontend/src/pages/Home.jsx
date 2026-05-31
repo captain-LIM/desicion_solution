@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { Plus, Trash2, Sparkles, Loader2, Brain } from 'lucide-react';
 import { cn } from '../lib/utils';
+import ReviewBanner from '../components/ReviewBanner';
 
 export default function Home() {
   const navigate = useNavigate();
@@ -49,6 +50,8 @@ export default function Home() {
   };
 
   return (
+    <>
+    <ReviewBanner />
     <main className="mx-auto max-w-2xl px-4 py-12">
       {/* 헤더 */}
       <div className="mb-10 text-center">
@@ -171,5 +174,6 @@ export default function Home() {
         </button>
       </form>
     </main>
+    </>
   );
 }

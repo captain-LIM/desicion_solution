@@ -125,6 +125,40 @@ async function getDecisionById(req, res) {
   }
 }
 
+async function reviewDecision(req, res) {
+  const { id } = req.params;
+  const { satisfaction, review_note } = req.body;
+
+  if (satisfaction === undefined || satisfaction === null) {
+    return res.status(400).json({ error: '만족도를 선택해주세요.' });
+  }
+
+  try {
+    await pool.execute(
+      'UPDATE decisions SET satisfaction = ?, review_note = ?, reviewed_at = NOW() WHERE id = ?',
+      [satisfaction, review_note || null, id]
+    );
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: '재검토 저장 중 오류가 발생했습니다.' });
+  }
+}
+
+async function getPendingReviews(req, res) {
+  try {
+    const [rows] = await pool.execute(
+      `SELECT id, scenario, recommended_option, created_at
+       FROM decisions
+       WHERE satisfaction IS NULL
+         AND created_at <= NOW() - INTERVAL 3 DAY
+       ORDER BY created_at DESC`
+    );
+    res.json(rows);
+  } catch (err) {
+    res.status(500).json({ error: '데이터를 불러오는 중 오류가 발생했습니다.' });
+  }
+}
+
 async function deleteDecision(req, res) {
   const { id } = req.params;
   try {
@@ -135,4 +169,4 @@ async function deleteDecision(req, res) {
   }
 }
 
-module.exports = { createDecision, getHistory, getDecisionById, deleteDecision };
+module.exports = { createDecision, getHistory, getDecisionById, reviewDecision, getPendingReviews, deleteDecision };

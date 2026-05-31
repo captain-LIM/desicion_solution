@@ -1,84 +1,134 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { Trash2, ChevronDown, ChevronUp, CheckCircle2, Loader2, ClockIcon, InboxIcon } from 'lucide-react';
+import { Trash2, ChevronDown, ChevronUp, CheckCircle2, Loader2, ClockIcon, InboxIcon, ThumbsUp, ThumbsDown, RotateCcw } from 'lucide-react';
 import { formatDate } from '../lib/utils';
+import ReviewModal from '../components/ReviewModal';
 
-function HistoryCard({ item, onDelete }) {
+function HistoryCard({ item, onDelete, onReviewed }) {
   const [open, setOpen] = useState(false);
+  const [showReview, setShowReview] = useState(false);
+
+  const isOldEnough = (new Date() - new Date(item.created_at)) >= 3 * 24 * 60 * 60 * 1000;
+  const needsReview = isOldEnough && item.satisfaction === null;
 
   return (
-    <div className="rounded-2xl border border-white/10 bg-white/5 overflow-hidden transition hover:border-white/20">
-      {/* 헤더 */}
-      <div
-        className="flex cursor-pointer items-start gap-4 p-5"
-        onClick={() => setOpen(!open)}
-      >
-        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-violet-600/20 text-violet-400 mt-0.5">
-          <CheckCircle2 size={18} />
-        </div>
-        <div className="flex-1 min-w-0">
-          <p className="font-medium text-white truncate">{item.scenario}</p>
-          <div className="mt-1 flex items-center gap-2 text-xs text-gray-500">
-            <ClockIcon size={11} />
-            {formatDate(item.created_at)}
+    <>
+      <div className="rounded-2xl border border-white/10 bg-white/5 overflow-hidden transition hover:border-white/20">
+        {/* 헤더 */}
+        <div
+          className="flex cursor-pointer items-start gap-4 p-5"
+          onClick={() => setOpen(!open)}
+        >
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-violet-600/20 text-violet-400 mt-0.5">
+            {item.satisfaction === 1 ? (
+              <ThumbsUp size={16} className="text-green-400" />
+            ) : item.satisfaction === 0 ? (
+              <ThumbsDown size={16} className="text-red-400" />
+            ) : (
+              <CheckCircle2 size={18} />
+            )}
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="font-medium text-white truncate">{item.scenario}</p>
+            <div className="mt-1 flex items-center gap-2 text-xs text-gray-500">
+              <ClockIcon size={11} />
+              {formatDate(item.created_at)}
+              {item.satisfaction === 1 && <span className="text-green-500">· 만족</span>}
+              {item.satisfaction === 0 && <span className="text-red-500">· 아쉬움</span>}
+              {needsReview && <span className="text-amber-400">· 재검토 필요</span>}
+            </div>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            <span className="rounded-full border border-violet-500/30 bg-violet-500/10 px-2.5 py-0.5 text-xs text-violet-300">
+              {item.recommended_option?.slice(0, 10)}{item.recommended_option?.length > 10 ? '...' : ''}
+            </span>
+            <button
+              onClick={(e) => { e.stopPropagation(); onDelete(item.id); }}
+              className="flex h-7 w-7 items-center justify-center rounded-lg text-gray-600 transition hover:bg-red-500/10 hover:text-red-400"
+            >
+              <Trash2 size={14} />
+            </button>
+            {open ? <ChevronUp size={16} className="text-gray-500" /> : <ChevronDown size={16} className="text-gray-500" />}
           </div>
         </div>
-        <div className="flex items-center gap-2 shrink-0">
-          <span className="rounded-full border border-violet-500/30 bg-violet-500/10 px-2.5 py-0.5 text-xs text-violet-300">
-            {item.recommended_option?.slice(0, 10)}{item.recommended_option?.length > 10 ? '...' : ''}
-          </span>
-          <button
-            onClick={(e) => { e.stopPropagation(); onDelete(item.id); }}
-            className="flex h-7 w-7 items-center justify-center rounded-lg text-gray-600 transition hover:bg-red-500/10 hover:text-red-400"
-          >
-            <Trash2 size={14} />
-          </button>
-          {open ? <ChevronUp size={16} className="text-gray-500" /> : <ChevronDown size={16} className="text-gray-500" />}
-        </div>
+
+        {/* 상세 내용 */}
+        {open && (
+          <div className="border-t border-white/5 px-5 pb-5 pt-4 space-y-4">
+            <div>
+              <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-gray-500">선택지</p>
+              <div className="space-y-2">
+                {item.options?.map((opt, idx) => (
+                  <div
+                    key={idx}
+                    className={`flex items-center gap-2 rounded-lg px-3 py-2 text-sm ${
+                      opt === item.recommended_option
+                        ? 'border border-violet-500/30 bg-violet-500/10 text-violet-200 font-medium'
+                        : 'border border-white/5 bg-white/5 text-gray-400'
+                    }`}
+                  >
+                    {opt === item.recommended_option && <CheckCircle2 size={14} className="shrink-0 text-violet-400" />}
+                    {opt}
+                    {opt === item.recommended_option && (
+                      <span className="ml-auto text-xs text-violet-400">AI 추천</span>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-gray-500">AI 추천 이유</p>
+              <p className="text-sm leading-relaxed text-gray-300">{item.explanation}</p>
+            </div>
+
+            {item.emotional_state && (
+              <div>
+                <p className="mb-1 text-xs font-semibold uppercase tracking-widest text-gray-500">감정 상태</p>
+                <p className="text-sm text-gray-400">{item.emotional_state}</p>
+              </div>
+            )}
+
+            {item.review_note && (
+              <div>
+                <p className="mb-1 text-xs font-semibold uppercase tracking-widest text-gray-500">재검토 메모</p>
+                <p className="text-sm text-gray-400">{item.review_note}</p>
+              </div>
+            )}
+
+            {/* 재검토 버튼 */}
+            {needsReview && (
+              <button
+                onClick={(e) => { e.stopPropagation(); setShowReview(true); }}
+                className="flex w-full items-center justify-center gap-2 rounded-xl border border-amber-500/30 bg-amber-500/10 py-2.5 text-sm font-medium text-amber-300 transition hover:bg-amber-500/20"
+              >
+                <RotateCcw size={14} />
+                이 결정 재검토하기
+              </button>
+            )}
+
+            {item.satisfaction !== null && (
+              <button
+                onClick={(e) => { e.stopPropagation(); setShowReview(true); }}
+                className="flex w-full items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/5 py-2.5 text-sm text-gray-500 transition hover:text-gray-300"
+              >
+                <RotateCcw size={14} />
+                재검토 다시 하기
+              </button>
+            )}
+          </div>
+        )}
       </div>
 
-      {/* 상세 내용 */}
-      {open && (
-        <div className="border-t border-white/5 px-5 pb-5 pt-4 space-y-4">
-          {/* 선택지 */}
-          <div>
-            <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-gray-500">선택지</p>
-            <div className="space-y-2">
-              {item.options?.map((opt, idx) => (
-                <div
-                  key={idx}
-                  className={`flex items-center gap-2 rounded-lg px-3 py-2 text-sm ${
-                    opt === item.recommended_option
-                      ? 'border border-violet-500/30 bg-violet-500/10 text-violet-200 font-medium'
-                      : 'border border-white/5 bg-white/5 text-gray-400'
-                  }`}
-                >
-                  {opt === item.recommended_option && <CheckCircle2 size={14} className="shrink-0 text-violet-400" />}
-                  {opt}
-                  {opt === item.recommended_option && (
-                    <span className="ml-auto text-xs text-violet-400">AI 추천</span>
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* 추천 이유 */}
-          <div>
-            <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-gray-500">AI 추천 이유</p>
-            <p className="text-sm leading-relaxed text-gray-300">{item.explanation}</p>
-          </div>
-
-          {item.emotional_state && (
-            <div>
-              <p className="mb-1 text-xs font-semibold uppercase tracking-widest text-gray-500">감정 상태</p>
-              <p className="text-sm text-gray-400">{item.emotional_state}</p>
-            </div>
-          )}
-        </div>
+      {showReview && (
+        <ReviewModal
+          decision={item}
+          onClose={() => setShowReview(false)}
+          onSubmit={(id, satisfaction) => onReviewed(id, satisfaction)}
+        />
       )}
-    </div>
+    </>
   );
 }
 
@@ -106,6 +156,12 @@ export default function History() {
     } catch (err) {
       console.error(err);
     }
+  };
+
+  const handleReviewed = (id, satisfaction) => {
+    setHistory((prev) =>
+      prev.map((h) => h.id === id ? { ...h, satisfaction } : h)
+    );
   };
 
   useEffect(() => { fetchHistory(); }, []);
@@ -143,7 +199,12 @@ export default function History() {
       ) : (
         <div className="space-y-3">
           {history.map((item) => (
-            <HistoryCard key={item.id} item={item} onDelete={handleDelete} />
+            <HistoryCard
+              key={item.id}
+              item={item}
+              onDelete={handleDelete}
+              onReviewed={handleReviewed}
+            />
           ))}
         </div>
       )}
