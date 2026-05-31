@@ -1,5 +1,5 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { BrainCircuit, History, Home, Sun, Moon, LogOut, User } from 'lucide-react';
+import { BrainCircuit, History, Home, Sun, Moon, LogOut, User, BarChart2 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
@@ -32,6 +32,7 @@ export default function Navbar() {
   const links = [
     { to: '/', label: '홈', icon: Home },
     { to: '/history', label: '히스토리', icon: History },
+    { to: '/stats', label: '통계', icon: BarChart2 },
   ];
 
   return (

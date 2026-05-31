@@ -212,4 +212,78 @@ async function deleteDecision(req, res) {
   }
 }
 
-module.exports = { createDecision, getHistory, getDecisionById, toggleBookmark, reviewDecision, getPendingReviews, deleteDecision };
+async function getStats(req, res) {
+  const userId = req.user.id;
+  try {
+    // 전체 결정 수
+    const [[{ total }]] = await pool.execute(
+      'SELECT COUNT(*) as total FROM decisions WHERE user_id = ?', [userId]
+    );
+
+    // 이번 달 결정 수
+    const [[{ this_month }]] = await pool.execute(
+      'SELECT COUNT(*) as this_month FROM decisions WHERE user_id = ? AND YEAR(created_at) = YEAR(NOW()) AND MONTH(created_at) = MONTH(NOW())',
+      [userId]
+    );
+
+    // 만족도
+    const [[satisfactionRow]] = await pool.execute(
+      `SELECT
+        COUNT(CASE WHEN satisfaction = 1 THEN 1 END) as satisfied,
+        COUNT(CASE WHEN satisfaction = 0 THEN 1 END) as unsatisfied,
+        COUNT(CASE WHEN satisfaction IS NOT NULL THEN 1 END) as reviewed
+       FROM decisions WHERE user_id = ?`,
+      [userId]
+    );
+
+    // 카테고리별 집계
+    const [categoryBreakdown] = await pool.execute(
+      `SELECT COALESCE(category, '미분류') as category, COUNT(*) as count
+       FROM decisions WHERE user_id = ?
+       GROUP BY category ORDER BY count DESC`,
+      [userId]
+    );
+
+    // 이번 달 가장 많은 카테고리
+    const [[topCategoryThisMonth]] = await pool.execute(
+      `SELECT COALESCE(category, '미분류') as category, COUNT(*) as count
+       FROM decisions WHERE user_id = ?
+         AND YEAR(created_at) = YEAR(NOW()) AND MONTH(created_at) = MONTH(NOW())
+       GROUP BY category ORDER BY count DESC LIMIT 1`,
+      [userId]
+    );
+
+    // 최근 6개월 월별 추이
+    const [monthlyTrend] = await pool.execute(
+      `SELECT DATE_FORMAT(created_at, '%Y-%m') as month, COUNT(*) as count
+       FROM decisions WHERE user_id = ? AND created_at >= DATE_SUB(NOW(), INTERVAL 6 MONTH)
+       GROUP BY month ORDER BY month ASC`,
+      [userId]
+    );
+
+    // 북마크 수
+    const [[{ bookmarked }]] = await pool.execute(
+      'SELECT COUNT(*) as bookmarked FROM decisions WHERE user_id = ? AND is_bookmarked = 1', [userId]
+    );
+
+    const satisfactionRate = satisfactionRow.reviewed > 0
+      ? Math.round((satisfactionRow.satisfied / satisfactionRow.reviewed) * 100)
+      : null;
+
+    res.json({
+      total,
+      this_month,
+      bookmarked,
+      satisfaction_rate: satisfactionRate,
+      reviewed_count: satisfactionRow.reviewed,
+      top_category_this_month: topCategoryThisMonth?.category || null,
+      category_breakdown: categoryBreakdown,
+      monthly_trend: monthlyTrend,
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: '통계를 불러오는 중 오류가 발생했습니다.' });
+  }
+}
+
+module.exports = { createDecision, getHistory, getDecisionById, toggleBookmark, reviewDecision, getPendingReviews, getStats, deleteDecision };
