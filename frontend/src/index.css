@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@custom-variant dark (&:where(.dark, .dark *));
 
 * {
   box-sizing: border-box;
@@ -8,9 +9,8 @@
 
 body {
   font-family: 'Pretendard', 'Noto Sans KR', system-ui, sans-serif;
-  background: #0f0f13;
-  color: #e2e2e8;
   min-height: 100vh;
+  transition: background-color 0.2s ease, color 0.2s ease;
 }
 
 #root {

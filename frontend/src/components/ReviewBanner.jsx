@@ -19,29 +19,28 @@ export default function ReviewBanner() {
   return (
     <>
       <div className="mx-auto max-w-2xl px-4 pt-6">
-        <div className="flex items-center gap-3 rounded-2xl border border-amber-500/20 bg-amber-500/10 px-5 py-4">
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-amber-500/20">
-            <Bell size={16} className="text-amber-400" />
+        <div className="flex items-center gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4 dark:border-amber-500/20 dark:bg-amber-500/10">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-amber-100 dark:bg-amber-500/20">
+            <Bell size={16} className="text-amber-500 dark:text-amber-400" />
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-semibold text-amber-300">
+            <p className="text-sm font-semibold text-amber-700 dark:text-amber-300">
               재검토 알림 {pending.length}건
             </p>
-            <p className="text-xs text-amber-400/70 truncate">
+            <p className="text-xs text-amber-600/70 truncate dark:text-amber-400/70">
               "{pending[0].scenario}" 외 {pending.length - 1}건의 결정을 돌아볼 시간이에요
             </p>
           </div>
           <div className="flex items-center gap-1 shrink-0">
             <button
               onClick={() => setCurrent(pending[0])}
-              className="flex items-center gap-1 rounded-lg bg-amber-500/20 px-3 py-1.5 text-xs font-medium text-amber-300 transition hover:bg-amber-500/30"
+              className="flex items-center gap-1 rounded-lg bg-amber-100 px-3 py-1.5 text-xs font-medium text-amber-700 transition hover:bg-amber-200 dark:bg-amber-500/20 dark:text-amber-300 dark:hover:bg-amber-500/30"
             >
-              검토하기
-              <ChevronRight size={13} />
+              검토하기<ChevronRight size={13} />
             </button>
             <button
               onClick={() => setDismissed(true)}
-              className="flex h-7 w-7 items-center justify-center rounded-lg text-amber-500/50 transition hover:bg-amber-500/10 hover:text-amber-400"
+              className="flex h-7 w-7 items-center justify-center rounded-lg text-amber-400 transition hover:bg-amber-100 dark:hover:bg-amber-500/10"
             >
               <X size={14} />
             </button>

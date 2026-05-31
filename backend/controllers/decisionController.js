@@ -5,7 +5,7 @@ require('dotenv').config();
 const OPENROUTER_URL = 'https://openrouter.ai/api/v1/chat/completions';
 
 async function createDecision(req, res) {
-  const { scenario, options, emotional_state } = req.body;
+  const { scenario, options, emotional_state, category } = req.body;
 
   if (!scenario || !options || options.length < 2) {
     return res.status(400).json({ error: '고민 상황과 최소 2개의 선택지를 입력해주세요.' });
@@ -52,8 +52,8 @@ ${optionsList}
       await conn.beginTransaction();
 
       const [result] = await conn.execute(
-        'INSERT INTO decisions (scenario, emotional_state, recommended_option, explanation) VALUES (?, ?, ?, ?)',
-        [scenario, emotional_state || null, parsed.recommended_option, parsed.explanation]
+        'INSERT INTO decisions (scenario, emotional_state, recommended_option, explanation, category) VALUES (?, ?, ?, ?, ?)',
+        [scenario, emotional_state || null, parsed.recommended_option, parsed.explanation, category || null]
       );
       const decisionId = result.insertId;
 
@@ -70,6 +70,7 @@ ${optionsList}
         id: decisionId,
         scenario,
         emotional_state: emotional_state || null,
+        category: category || null,
         options,
         recommended_option: parsed.recommended_option,
         explanation: parsed.explanation,
@@ -87,9 +88,34 @@ ${optionsList}
 }
 
 async function getHistory(req, res) {
+  const { keyword, category, date_from, date_to } = req.query;
+
   try {
-    const [decisions] = await pool.execute(
-      'SELECT * FROM decisions ORDER BY created_at DESC LIMIT 50'
+    const conditions = [];
+    const params = [];
+
+    if (keyword) {
+      conditions.push('(scenario LIKE ? OR recommended_option LIKE ? OR explanation LIKE ?)');
+      const like = `%${keyword}%`;
+      params.push(like, like, like);
+    }
+    if (category) {
+      conditions.push('category = ?');
+      params.push(category);
+    }
+    if (date_from) {
+      conditions.push('DATE(created_at) >= ?');
+      params.push(date_from);
+    }
+    if (date_to) {
+      conditions.push('DATE(created_at) <= ?');
+      params.push(date_to);
+    }
+
+    const where = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
+    const [decisions] = await pool.query(
+      `SELECT * FROM decisions ${where} ORDER BY created_at DESC LIMIT 100`,
+      params
     );
 
     for (const decision of decisions) {

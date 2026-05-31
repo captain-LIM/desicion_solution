@@ -10,7 +10,7 @@ function Layout() {
   const isShare = pathname.startsWith('/share/');
 
   return (
-    <div className="min-h-screen bg-[#0f0f13] text-white">
+    <div className="min-h-screen bg-[#f8f8fc] text-gray-900 dark:bg-[#0f0f13] dark:text-white transition-colors duration-200">
       {!isShare && <Navbar />}
       <Routes>
         <Route path="/" element={<Home />} />
