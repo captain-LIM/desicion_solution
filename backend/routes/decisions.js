@@ -3,7 +3,7 @@ const router = express.Router();
 const {
   createDecision, getHistory, getDecisionById,
   toggleBookmark, reviewDecision, getPendingReviews,
-  getStats, deleteDecision,
+  getStats, deleteDecision, getInsights,
 } = require('../controllers/decisionController');
 const { authMiddleware, optionalAuth } = require('../middleware/auth');
 
@@ -11,6 +11,7 @@ router.post('/', authMiddleware, createDecision);
 router.get('/history', authMiddleware, getHistory);
 router.get('/pending-reviews', authMiddleware, getPendingReviews);
 router.get('/stats', authMiddleware, getStats);
+router.get('/insights', authMiddleware, getInsights);
 router.get('/:id', optionalAuth, getDecisionById);
 router.patch('/:id/bookmark', authMiddleware, toggleBookmark);
 router.patch('/:id/review', authMiddleware, reviewDecision);

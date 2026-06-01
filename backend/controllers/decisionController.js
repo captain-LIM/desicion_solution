@@ -327,4 +327,144 @@ async function getStats(req, res) {
   }
 }
 
-module.exports = { createDecision, getHistory, getDecisionById, toggleBookmark, reviewDecision, getPendingReviews, getStats, deleteDecision };
+async function getInsights(req, res) {
+  const userId = req.user.id;
+  try {
+    // 카테고리별 만족도
+    const [catRows] = await pool.execute(
+      `SELECT COALESCE(category, '미분류') as category,
+         COUNT(*) as total,
+         COUNT(CASE WHEN satisfaction = 1 THEN 1 END) as satisfied,
+         COUNT(CASE WHEN satisfaction IS NOT NULL THEN 1 END) as reviewed
+       FROM decisions WHERE user_id = ?
+       GROUP BY category ORDER BY total DESC`,
+      [userId]
+    );
+
+    // 평균 선택지 수
+    const [[{ avg_options }]] = await pool.execute(
+      `SELECT AVG(cnt) as avg_options FROM (
+         SELECT COUNT(*) as cnt FROM options o
+         JOIN decisions d ON d.id = o.decision_id
+         WHERE d.user_id = ? GROUP BY d.id
+       ) t`,
+      [userId]
+    );
+
+    // 감정 상태 입력 여부별 만족도
+    const [emotionRows] = await pool.execute(
+      `SELECT
+         CASE WHEN emotional_state IS NOT NULL AND emotional_state != '' THEN 1 ELSE 0 END as has_emotion,
+         COUNT(*) as total,
+         COUNT(CASE WHEN satisfaction = 1 THEN 1 END) as satisfied,
+         COUNT(CASE WHEN satisfaction IS NOT NULL THEN 1 END) as reviewed
+       FROM decisions WHERE user_id = ?
+       GROUP BY has_emotion`,
+      [userId]
+    );
+
+    // 리뷰 현황 + 전체 수
+    const [[reviewStats]] = await pool.execute(
+      `SELECT
+         COUNT(*) as total,
+         COUNT(CASE WHEN satisfaction IS NOT NULL THEN 1 END) as reviewed,
+         COUNT(CASE WHEN satisfaction = 1 THEN 1 END) as satisfied
+       FROM decisions WHERE user_id = ?`,
+      [userId]
+    );
+
+    // 시간대별 결정 분포
+    const [hourRows] = await pool.execute(
+      `SELECT HOUR(created_at) as hour, COUNT(*) as count
+       FROM decisions WHERE user_id = ?
+       GROUP BY hour ORDER BY hour`,
+      [userId]
+    );
+
+    // 최근 4주 주간 추이
+    const [weeklyTrend] = await pool.execute(
+      `SELECT YEARWEEK(created_at, 1) as yw,
+              MIN(DATE(created_at)) as week_start,
+              COUNT(*) as count
+       FROM decisions WHERE user_id = ? AND created_at >= DATE_SUB(NOW(), INTERVAL 28 DAY)
+       GROUP BY yw ORDER BY yw`,
+      [userId]
+    );
+
+    // 개인화 AI 사용 현황 (is_personalized 컬럼 없으므로 reviewed >= 3인 경우를 기준으로 사용)
+    // 이미 개인화 결정 = reviewed 데이터가 쌓인 이후 생성된 결정들은 personalized
+    // 단순하게 reviewed_count >= 3 이후 생성된 결정 수로 근사
+    const [[{ personalized_count }]] = await pool.execute(
+      `SELECT COUNT(*) as personalized_count FROM decisions
+       WHERE user_id = ? AND created_at > (
+         SELECT COALESCE(
+           (SELECT reviewed_at FROM decisions
+            WHERE user_id = ? AND satisfaction IS NOT NULL
+            ORDER BY reviewed_at ASC LIMIT 1 OFFSET 2),
+           NOW()
+         )
+       )`,
+      [userId, userId]
+    );
+
+    // 결과 가공
+    const withEmo = emotionRows.find((r) => r.has_emotion === 1) || { total: 0, reviewed: 0, satisfied: 0 };
+    const withoutEmo = emotionRows.find((r) => r.has_emotion === 0) || { total: 0, reviewed: 0, satisfied: 0 };
+
+    const catInsights = catRows.map((c) => ({
+      category: c.category,
+      total: c.total,
+      reviewed: c.reviewed,
+      satisfaction_rate: c.reviewed > 0 ? Math.round((c.satisfied / c.reviewed) * 100) : null,
+    }));
+
+    const overallRate = reviewStats.reviewed > 0
+      ? Math.round((reviewStats.satisfied / reviewStats.reviewed) * 100)
+      : null;
+
+    const emoRate = withEmo.reviewed > 0 ? Math.round((withEmo.satisfied / withEmo.reviewed) * 100) : null;
+    const noEmoRate = withoutEmo.reviewed > 0 ? Math.round((withoutEmo.satisfied / withoutEmo.reviewed) * 100) : null;
+
+    const avgOpts = avg_options ? Math.round(parseFloat(avg_options) * 10) / 10 : 0;
+    const emotionUsageRate = reviewStats.total > 0 ? Math.round((withEmo.total / reviewStats.total) * 100) : 0;
+    const reviewRate = reviewStats.total > 0 ? Math.round((reviewStats.reviewed / reviewStats.total) * 100) : 0;
+
+    // 결정 성향 태그 (복수 가능)
+    const traits = [];
+    if (avgOpts >= 3.8) traits.push({ key: 'careful', label: '신중형', desc: '여러 선택지를 꼼꼼히 고려해요', icon: 'search' });
+    else if (avgOpts > 0 && avgOpts <= 2.3) traits.push({ key: 'decisive', label: '결단형', desc: '핵심을 빠르게 파악해 결정해요', icon: 'zap' });
+    if (emotionUsageRate >= 55) traits.push({ key: 'emotional', label: '감성형', desc: '감정을 의사결정에 적극 반영해요', icon: 'heart' });
+    else if (reviewStats.total >= 3 && emotionUsageRate < 20) traits.push({ key: 'rational', label: '이성형', desc: '데이터와 상황을 중심으로 판단해요', icon: 'cpu' });
+    if (reviewRate >= 60) traits.push({ key: 'reflective', label: '성찰형', desc: '결정 후 결과를 꼭 돌아봐요', icon: 'refresh' });
+    if (traits.length === 0 && reviewStats.total >= 3) traits.push({ key: 'balanced', label: '균형형', desc: '상황에 맞게 유연하게 결정해요', icon: 'sliders' });
+
+    // 피크 시간대
+    const peakHour = hourRows.length > 0
+      ? hourRows.reduce((a, b) => (a.count >= b.count ? a : b))
+      : null;
+
+    res.json({
+      total: reviewStats.total,
+      reviewed_count: reviewStats.reviewed,
+      overall_satisfaction_rate: overallRate,
+      review_rate: reviewRate,
+      avg_options: avgOpts,
+      emotion_usage_rate: emotionUsageRate,
+      emotion_satisfaction_rate: emoRate,
+      no_emotion_satisfaction_rate: noEmoRate,
+      emotion_with_total: withEmo.total,
+      emotion_without_total: withoutEmo.total,
+      satisfaction_by_category: catInsights,
+      hour_distribution: hourRows,
+      weekly_trend: weeklyTrend,
+      personalized_count: parseInt(personalized_count) || 0,
+      traits,
+      peak_hour: peakHour ? peakHour.hour : null,
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: '인사이트를 불러오는 중 오류가 발생했습니다.' });
+  }
+}
+
+module.exports = { createDecision, getHistory, getDecisionById, toggleBookmark, reviewDecision, getPendingReviews, getStats, deleteDecision, getInsights };

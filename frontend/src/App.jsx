@@ -5,6 +5,7 @@ import Home from './pages/Home';
 import Result from './pages/Result';
 import History from './pages/History';
 import Stats from './pages/Stats';
+import Insights from './pages/Insights';
 import Share from './pages/Share';
 import Login from './pages/Login';
 import Register from './pages/Register';
@@ -24,6 +25,7 @@ function Layout() {
         <Route path="/result" element={<ProtectedRoute><Result /></ProtectedRoute>} />
         <Route path="/history" element={<ProtectedRoute><History /></ProtectedRoute>} />
         <Route path="/stats" element={<ProtectedRoute><Stats /></ProtectedRoute>} />
+        <Route path="/insights" element={<ProtectedRoute><Insights /></ProtectedRoute>} />
       </Routes>
     </div>
   );
