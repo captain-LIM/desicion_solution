@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { CheckCircle2, Sparkles, MessageSquareText, Loader2, BrainCircuit, Link2, Check } from 'lucide-react';
+import { CheckCircle2, Sparkles, MessageSquareText, Loader2, BrainCircuit, Link2, Check, TrendingUp, Target, Heart, Layers } from 'lucide-react';
 import { formatDate, cn } from '../lib/utils';
 
 export default function Share() {
@@ -87,13 +87,51 @@ export default function Share() {
         </div>
       </div>
 
-      <div className="mb-8 rounded-2xl border border-violet-200 bg-violet-50 p-6 dark:border-violet-500/30 dark:bg-violet-950/40">
+      <div className={cn('rounded-2xl border border-violet-200 bg-violet-50 p-6 dark:border-violet-500/30 dark:bg-violet-950/40', result.perspectives ? 'mb-4' : 'mb-8')}>
         <div className="mb-3 flex items-center gap-2">
           <MessageSquareText size={16} className="text-violet-600 dark:text-violet-400" />
-          <p className="text-sm font-semibold text-violet-700 dark:text-violet-300">AI 추천 이유</p>
+          <p className="text-sm font-semibold text-violet-700 dark:text-violet-300">AI 종합 추천</p>
         </div>
         <p className="leading-relaxed text-gray-700 dark:text-gray-100">{result.explanation}</p>
       </div>
+
+      {result.perspectives && (
+        <div className="mb-8">
+          <div className="mb-3 flex items-center gap-2">
+            <Layers size={15} className="text-gray-400 dark:text-gray-500" />
+            <p className="text-sm font-semibold text-gray-600 dark:text-gray-300">3가지 관점 분석</p>
+          </div>
+          <div className="space-y-3">
+            <div className="rounded-2xl border border-green-200 bg-green-50 p-5 dark:border-green-500/25 dark:bg-green-950/30">
+              <div className="mb-2 flex items-center gap-2">
+                <div className="flex h-6 w-6 items-center justify-center rounded-full bg-green-100 dark:bg-green-500/20">
+                  <TrendingUp size={13} className="text-green-600 dark:text-green-400" />
+                </div>
+                <span className="text-sm font-semibold text-green-700 dark:text-green-300">낙관론자의 시각</span>
+              </div>
+              <p className="text-sm leading-relaxed text-gray-700 dark:text-gray-100">{result.perspectives.optimist}</p>
+            </div>
+            <div className="rounded-2xl border border-blue-200 bg-blue-50 p-5 dark:border-blue-500/25 dark:bg-blue-950/30">
+              <div className="mb-2 flex items-center gap-2">
+                <div className="flex h-6 w-6 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-500/20">
+                  <Target size={13} className="text-blue-600 dark:text-blue-400" />
+                </div>
+                <span className="text-sm font-semibold text-blue-700 dark:text-blue-300">현실주의자의 시각</span>
+              </div>
+              <p className="text-sm leading-relaxed text-gray-700 dark:text-gray-100">{result.perspectives.realist}</p>
+            </div>
+            <div className="rounded-2xl border border-pink-200 bg-pink-50 p-5 dark:border-pink-500/25 dark:bg-pink-950/30">
+              <div className="mb-2 flex items-center gap-2">
+                <div className="flex h-6 w-6 items-center justify-center rounded-full bg-pink-100 dark:bg-pink-500/20">
+                  <Heart size={13} className="text-pink-600 dark:text-pink-400" />
+                </div>
+                <span className="text-sm font-semibold text-pink-700 dark:text-pink-300">감성적 시각</span>
+              </div>
+              <p className="text-sm leading-relaxed text-gray-700 dark:text-gray-100">{result.perspectives.emotional}</p>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="flex gap-3">
         <button onClick={handleCopyLink}

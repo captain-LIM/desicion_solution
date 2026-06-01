@@ -56,7 +56,7 @@ async function createDecision(req, res) {
   const { context: personalizationContext, isPersonalized } = await buildPersonalizationContext(req.user.id);
 
   const prompt = `당신은 사용자의 의사결정을 도와주는 AI 어시스턴트입니다.
-사용자의 고민 상황과 선택지를 분석하여 최적의 선택을 추천해주세요.${personalizationContext}
+사용자의 고민 상황과 선택지를 3가지 관점에서 다각도로 분석해주세요.${personalizationContext}
 고민 상황: ${scenario}${emotionPart}
 
 선택지:
@@ -64,8 +64,13 @@ ${optionsList}
 
 다음 JSON 형식으로만 응답하세요 (다른 텍스트 없이):
 {
-  "recommended_option": "추천하는 선택지 텍스트 (원문 그대로)",
-  "explanation": "이 선택을 추천하는 이유를 3-4문장으로 설명${isPersonalized ? '. 사용자의 과거 패턴을 반영한 경우 언급해주세요.' : ''}"
+  "recommended_option": "가장 추천하는 선택지 텍스트 (원문 그대로)",
+  "explanation": "최종 추천 이유를 1-2문장으로 간결하게 요약${isPersonalized ? '. 사용자의 과거 패턴을 반영한 경우 언급해주세요.' : ''}",
+  "perspectives": {
+    "optimist": "낙관론자 시각: 최선의 결과와 기회, 성장 가능성을 중심으로 어떤 선택이 가장 큰 가능성을 여는지 2-3문장으로 분석",
+    "realist": "현실주의자 시각: 현실적인 제약, 리스크, 실현 가능성을 냉정하게 따져 어떤 선택이 가장 실용적인지 2-3문장으로 분석",
+    "emotional": "감성적 시각: 감정적 만족감, 후회 가능성, 가치관과의 일치 여부를 기준으로 어떤 선택이 마음의 평화를 가져올지 2-3문장으로 분석"
+  }
 }`;
 
   try {
@@ -92,8 +97,8 @@ ${optionsList}
       await conn.beginTransaction();
 
       const [result] = await conn.execute(
-        'INSERT INTO decisions (scenario, emotional_state, recommended_option, explanation, category, user_id) VALUES (?, ?, ?, ?, ?, ?)',
-        [scenario, emotional_state || null, parsed.recommended_option, parsed.explanation, category || null, req.user.id]
+        'INSERT INTO decisions (scenario, emotional_state, recommended_option, explanation, category, user_id, perspectives) VALUES (?, ?, ?, ?, ?, ?, ?)',
+        [scenario, emotional_state || null, parsed.recommended_option, parsed.explanation, category || null, req.user.id, parsed.perspectives ? JSON.stringify(parsed.perspectives) : null]
       );
       const decisionId = result.insertId;
 
@@ -114,6 +119,7 @@ ${optionsList}
         options,
         recommended_option: parsed.recommended_option,
         explanation: parsed.explanation,
+        perspectives: parsed.perspectives || null,
         is_personalized: isPersonalized,
       });
     } catch (dbErr) {
@@ -168,6 +174,9 @@ async function getHistory(req, res) {
         [decision.id]
       );
       decision.options = opts.map((o) => o.option_text);
+      if (decision.perspectives && typeof decision.perspectives === 'string') {
+        try { decision.perspectives = JSON.parse(decision.perspectives); } catch { decision.perspectives = null; }
+      }
     }
 
     res.json(decisions);
@@ -189,6 +198,9 @@ async function getDecisionById(req, res) {
       [id]
     );
     decision.options = opts.map((o) => o.option_text);
+    if (decision.perspectives && typeof decision.perspectives === 'string') {
+      try { decision.perspectives = JSON.parse(decision.perspectives); } catch { decision.perspectives = null; }
+    }
     res.json(decision);
   } catch (err) {
     res.status(500).json({ error: '데이터를 불러오는 중 오류가 발생했습니다.' });

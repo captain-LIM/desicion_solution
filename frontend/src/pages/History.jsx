@@ -5,6 +5,7 @@ import {
   Trash2, ChevronDown, ChevronUp, CheckCircle2, Loader2,
   ClockIcon, InboxIcon, ThumbsUp, ThumbsDown, RotateCcw,
   Bookmark, BookmarkCheck, Search, X, SlidersHorizontal,
+  TrendingUp, Target, Heart, Layers,
 } from 'lucide-react';
 import { formatDate, cn } from '../lib/utils';
 import { CATEGORIES } from '../lib/categories';
@@ -90,9 +91,40 @@ function HistoryCard({ item, onDelete, onReviewed, onBookmarkToggle }) {
               </div>
             </div>
             <div>
-              <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-gray-400 dark:text-gray-500">AI 추천 이유</p>
+              <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-gray-400 dark:text-gray-500">AI 종합 추천</p>
               <p className="text-sm leading-relaxed text-gray-600 dark:text-gray-100">{item.explanation}</p>
             </div>
+            {item.perspectives && (
+              <div>
+                <div className="mb-2 flex items-center gap-1.5">
+                  <Layers size={12} className="text-gray-400 dark:text-gray-500" />
+                  <p className="text-xs font-semibold uppercase tracking-widest text-gray-400 dark:text-gray-500">3가지 관점</p>
+                </div>
+                <div className="space-y-2">
+                  <div className="rounded-xl border border-green-200 bg-green-50 px-4 py-3 dark:border-green-500/20 dark:bg-green-950/20">
+                    <div className="mb-1 flex items-center gap-1.5">
+                      <TrendingUp size={11} className="text-green-600 dark:text-green-400" />
+                      <span className="text-xs font-semibold text-green-700 dark:text-green-300">낙관론자</span>
+                    </div>
+                    <p className="text-xs leading-relaxed text-gray-600 dark:text-gray-100">{item.perspectives.optimist}</p>
+                  </div>
+                  <div className="rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 dark:border-blue-500/20 dark:bg-blue-950/20">
+                    <div className="mb-1 flex items-center gap-1.5">
+                      <Target size={11} className="text-blue-600 dark:text-blue-400" />
+                      <span className="text-xs font-semibold text-blue-700 dark:text-blue-300">현실주의자</span>
+                    </div>
+                    <p className="text-xs leading-relaxed text-gray-600 dark:text-gray-100">{item.perspectives.realist}</p>
+                  </div>
+                  <div className="rounded-xl border border-pink-200 bg-pink-50 px-4 py-3 dark:border-pink-500/20 dark:bg-pink-950/20">
+                    <div className="mb-1 flex items-center gap-1.5">
+                      <Heart size={11} className="text-pink-600 dark:text-pink-400" />
+                      <span className="text-xs font-semibold text-pink-700 dark:text-pink-300">감성적</span>
+                    </div>
+                    <p className="text-xs leading-relaxed text-gray-600 dark:text-gray-100">{item.perspectives.emotional}</p>
+                  </div>
+                </div>
+              </div>
+            )}
             {item.emotional_state && (
               <div>
                 <p className="mb-1 text-xs font-semibold uppercase tracking-widest text-gray-400 dark:text-gray-500">감정 상태</p>
