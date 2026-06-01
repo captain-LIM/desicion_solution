@@ -32,14 +32,14 @@ function Layout() {
 
   if (hideNav) {
     return (
-      <div className="min-h-screen bg-[#f8f8fc] text-gray-900 dark:bg-[#0f0f13] dark:text-white transition-colors duration-200">
+      <div className="min-h-screen bg-gray-50 text-gray-900 dark:bg-[#0d0d12] dark:text-white transition-colors duration-200">
         {routes}
       </div>
     );
   }
 
   return (
-    <div className="flex h-screen overflow-hidden bg-[#f8f8fc] text-gray-900 dark:bg-[#0f0f13] dark:text-white transition-colors duration-200">
+    <div className="flex h-screen overflow-hidden bg-gray-50 text-gray-900 dark:bg-[#0d0d12] dark:text-white transition-colors duration-200">
       <Sidebar />
       <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
         <Navbar />

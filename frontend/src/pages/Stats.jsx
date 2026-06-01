@@ -22,7 +22,7 @@ function StatCard({ icon: Icon, label, value, sub, color = 'violet' }) {
     blue: 'bg-blue-100 text-blue-600 dark:bg-blue-600/20 dark:text-blue-400',
   };
   return (
-    <div className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-white/10 dark:bg-white/5">
+    <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-white/[0.08] dark:bg-[#16161f]">
       <div className="mb-3 flex items-center gap-3">
         <div className={cn('flex h-9 w-9 items-center justify-center rounded-xl', colorMap[color])}>
           <Icon size={18} />
@@ -83,7 +83,7 @@ export default function Stats() {
   const topCat = CATEGORIES.find((c) => c.value === stats.top_category_this_month);
 
   return (
-    <main className="mx-auto max-w-5xl px-6 py-10">
+    <main className="mx-auto max-w-4xl px-5 py-8">
       {/* 헤더 */}
       <div className="mb-8">
         <h1 className="text-2xl font-bold text-gray-900 dark:text-white">결정 통계</h1>
@@ -148,7 +148,7 @@ export default function Stats() {
 
           {/* 월별 추이 */}
           {monthlyData.length > 0 && (
-            <div className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-white/10 dark:bg-white/5">
+            <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm dark:border-white/[0.08] dark:bg-[#16161f]">
               <div className="mb-5 flex items-center gap-2">
                 <TrendingUp size={16} className="text-violet-600 dark:text-violet-400" />
                 <p className="text-sm font-semibold text-gray-700 dark:text-gray-300">최근 6개월 결정 추이</p>
@@ -168,7 +168,7 @@ export default function Stats() {
           {categoryData.length > 0 && (
             <div className="grid gap-4 lg:grid-cols-2">
               {/* 파이 차트 */}
-              <div className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-white/10 dark:bg-white/5">
+              <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm dark:border-white/[0.08] dark:bg-[#16161f]">
                 <p className="mb-4 text-sm font-semibold text-gray-700 dark:text-gray-300">카테고리 분포</p>
                 <ResponsiveContainer width="100%" height={200}>
                   <PieChart>
@@ -184,7 +184,7 @@ export default function Stats() {
               </div>
 
               {/* 카테고리 바 리스트 */}
-              <div className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-white/10 dark:bg-white/5">
+              <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm dark:border-white/[0.08] dark:bg-[#16161f]">
                 <p className="mb-4 text-sm font-semibold text-gray-700 dark:text-gray-300">카테고리별 결정 수</p>
                 <div className="space-y-3">
                   {categoryData.map((item, i) => (
@@ -208,7 +208,7 @@ export default function Stats() {
 
           {/* 만족도 분석 */}
           {stats.reviewed_count > 0 && (
-            <div className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-white/10 dark:bg-white/5">
+            <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm dark:border-white/[0.08] dark:bg-[#16161f]">
               <div className="mb-4 flex items-center gap-2">
                 <CheckCircle2 size={16} className="text-green-600 dark:text-green-400" />
                 <p className="text-sm font-semibold text-gray-700 dark:text-gray-300">재검토 만족도 분석</p>

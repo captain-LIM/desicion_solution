@@ -35,7 +35,7 @@ function HistoryCard({ item, onDelete, onReviewed, onBookmarkToggle }) {
 
   return (
     <>
-      <div className="rounded-2xl border border-gray-200 bg-white overflow-hidden transition hover:border-gray-300 dark:border-white/10 dark:bg-white/5 dark:hover:border-white/20">
+      <div className="rounded-2xl border border-gray-200 bg-white overflow-hidden shadow-sm transition hover:border-gray-300 dark:border-white/[0.08] dark:bg-[#16161f] dark:hover:border-white/20">
         <div className="flex cursor-pointer items-start gap-4 p-5" onClick={() => setOpen(!open)}>
           <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-violet-100 text-violet-600 mt-0.5 dark:bg-violet-600/20 dark:text-violet-400">
             {item.satisfaction === 1 ? <ThumbsUp size={16} className="text-green-500 dark:text-green-400" />
@@ -213,17 +213,17 @@ export default function History() {
   const filtered = filter === 'bookmarked' ? history.filter((h) => h.is_bookmarked) : history;
   const bookmarkCount = history.filter((h) => h.is_bookmarked).length;
 
-  const inputCls = 'rounded-xl border border-gray-200 bg-gray-50 text-sm text-gray-900 placeholder-gray-400 outline-none transition focus:border-violet-400 focus:ring-2 focus:ring-violet-400/20 dark:border-white/10 dark:bg-white/5 dark:text-white dark:placeholder-gray-500 dark:focus:border-violet-500/50 dark:focus:ring-violet-500/20';
+  const inputCls = 'rounded-lg border border-gray-200 bg-gray-50 text-sm text-gray-900 placeholder-gray-400 outline-none transition focus:border-violet-400 focus:bg-white focus:ring-2 focus:ring-violet-400/15 dark:border-white/[0.08] dark:bg-white/[0.03] dark:text-white dark:placeholder-gray-500 dark:focus:border-violet-500/60 dark:focus:bg-white/[0.06]';
 
   return (
-    <main className="mx-auto max-w-4xl px-6 py-10">
+    <main className="mx-auto max-w-3xl px-5 py-8">
       <div className="mb-6 flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">결정 히스토리</h1>
-          <p className="mt-1 text-sm text-gray-400 dark:text-gray-500">과거에 내린 결정들을 확인하세요</p>
+          <p className="mt-1 text-sm text-gray-400">과거에 내린 결정들을 확인하세요</p>
         </div>
         <button onClick={() => navigate('/')}
-          className="rounded-xl bg-gradient-to-r from-violet-600 to-purple-600 px-4 py-2 text-sm font-medium text-white shadow-lg shadow-violet-500/20 transition hover:from-violet-500 hover:to-purple-500">
+          className="rounded-lg bg-violet-600 px-3.5 py-2 text-sm font-medium text-white transition hover:bg-violet-700">
           + 새 결정
         </button>
       </div>
@@ -231,7 +231,7 @@ export default function History() {
       {/* 검색창 */}
       <div className="mb-4 flex gap-2">
         <div className="relative flex-1">
-          <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500" />
+          <Search size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
           <input value={keyword} onChange={(e) => setKeyword(e.target.value)} placeholder="키워드로 검색..."
             className={cn(inputCls, 'w-full py-2.5 pl-9 pr-4')} />
           {keyword && (
@@ -241,12 +241,12 @@ export default function History() {
           )}
         </div>
         <button onClick={() => setShowFilters(!showFilters)}
-          className={cn('flex items-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-medium transition',
+          className={cn('flex items-center gap-2 rounded-lg border px-3.5 py-2.5 text-sm font-medium transition',
             showFilters || hasActiveFilters
-              ? 'border-violet-300 bg-violet-50 text-violet-600 dark:border-violet-500/50 dark:bg-violet-500/15 dark:text-violet-300'
-              : 'border-gray-200 bg-gray-50 text-gray-500 hover:bg-gray-100 dark:border-white/10 dark:bg-white/5 dark:text-gray-400 dark:hover:bg-white/10'
+              ? 'border-violet-300 bg-violet-50 text-violet-600 dark:border-violet-500/40 dark:bg-violet-500/15 dark:text-violet-300'
+              : 'border-gray-200 bg-gray-50 text-gray-500 hover:bg-gray-100 dark:border-white/[0.08] dark:bg-white/[0.03] dark:text-gray-400 dark:hover:bg-white/[0.06]'
           )}>
-          <SlidersHorizontal size={15} />필터
+          <SlidersHorizontal size={14} />필터
           {hasActiveFilters && (
             <span className="flex h-4 w-4 items-center justify-center rounded-full bg-violet-600 text-[10px] text-white dark:bg-violet-500">
               {[keyword, selectedCategory, dateFrom, dateTo].filter(Boolean).length}
@@ -257,7 +257,7 @@ export default function History() {
 
       {/* 필터 패널 */}
       {showFilters && (
-        <div className="mb-4 rounded-2xl border border-gray-200 bg-white p-5 space-y-4 dark:border-white/10 dark:bg-white/5">
+        <div className="mb-4 rounded-2xl border border-gray-200 bg-white p-5 space-y-4 shadow-sm dark:border-white/[0.08] dark:bg-[#16161f]">
           <div>
             <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-gray-400 dark:text-gray-500">카테고리</p>
             <div className="flex flex-wrap gap-2">
