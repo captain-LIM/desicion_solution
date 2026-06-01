@@ -1,23 +1,41 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { CheckCircle2, Sparkles, MessageSquareText, Loader2, BrainCircuit, Link2, Check, TrendingUp, Target, Heart, Layers } from 'lucide-react';
+import { CheckCircle2, Sparkles, MessageSquareText, Loader2, BrainCircuit, Link2, Check, TrendingUp, Target, Heart, Layers, Users, Zap } from 'lucide-react';
 import { formatDate, cn } from '../lib/utils';
+import { useAuth } from '../context/AuthContext';
 
 export default function Share() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [voteState, setVoteState] = useState(null);
 
   useEffect(() => {
     axios.get(`/api/decisions/${id}`)
-      .then(({ data }) => setResult(data))
+      .then(({ data }) => {
+        setResult(data);
+        if (data.is_public) {
+          axios.get(`/api/decisions/${id}/votes`)
+            .then(({ data: vd }) => setVoteState(vd))
+            .catch(() => {});
+        }
+      })
       .catch(() => setNotFound(true))
       .finally(() => setLoading(false));
   }, [id]);
+
+  const handleVote = async (option) => {
+    if (!user || voteState?.user_vote || voteState?.is_owner) return;
+    try {
+      const { data } = await axios.post(`/api/decisions/${id}/vote`, { option_text: option });
+      setVoteState((prev) => ({ ...prev, ...data }));
+    } catch (err) { console.error(err); }
+  };
 
   const handleCopyLink = async () => {
     await navigator.clipboard.writeText(window.location.href);
@@ -130,6 +148,85 @@ export default function Share() {
               <p className="text-sm leading-relaxed text-gray-700 dark:text-gray-100">{result.perspectives.emotional}</p>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* 커뮤니티 투표 */}
+      {!!result.is_public && voteState && (
+        <div className="mb-8 rounded-2xl border border-blue-200 bg-blue-50 p-6 dark:border-blue-500/30 dark:bg-blue-950/30">
+          <div className="mb-3 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Users size={16} className="text-blue-600 dark:text-blue-400" />
+              <p className="text-sm font-semibold text-blue-700 dark:text-blue-300">사람들의 선택</p>
+            </div>
+            <span className="text-xs text-blue-500/70 dark:text-blue-400/50">{voteState.total_votes}명 참여</span>
+          </div>
+
+          {/* AI vs People 비교 */}
+          {voteState.total_votes >= 3 && (() => {
+            const topVoted = Object.entries(voteState.vote_counts).sort(([, a], [, b]) => b - a)[0]?.[0];
+            const agree = topVoted === result.recommended_option;
+            return (
+              <div className={cn('mb-4 flex items-center gap-2 rounded-xl px-3 py-2.5 text-xs font-medium',
+                agree ? 'bg-green-100 text-green-700 dark:bg-green-500/15 dark:text-green-300'
+                      : 'bg-orange-100 text-orange-700 dark:bg-orange-500/15 dark:text-orange-300'
+              )}>
+                {agree ? <CheckCircle2 size={13} /> : <Zap size={13} />}
+                {agree
+                  ? 'AI와 사람들의 선택이 일치해요!'
+                  : `AI: "${result.recommended_option}" 추천 / 사람들: "${topVoted}" 선택`
+                }
+              </div>
+            );
+          })()}
+
+          {/* 옵션 바 */}
+          <div className="space-y-2">
+            {result.options.map((opt) => {
+              const count = voteState.vote_counts[opt] || 0;
+              const pct = voteState.total_votes > 0 ? Math.round((count / voteState.total_votes) * 100) : 0;
+              const isAI = opt === result.recommended_option;
+              const isMyVote = opt === voteState.user_vote;
+              const topVoted = Object.entries(voteState.vote_counts).sort(([, a], [, b]) => b - a)[0]?.[0];
+              const isTop = opt === topVoted && voteState.total_votes > 0;
+              const canVote = !voteState.user_vote && !voteState.is_owner && !!user;
+              return (
+                <div
+                  key={opt}
+                  onClick={canVote ? () => handleVote(opt) : undefined}
+                  className={cn(
+                    'rounded-xl border px-4 py-3 transition',
+                    canVote && 'cursor-pointer hover:border-blue-400 hover:bg-blue-100 dark:hover:border-blue-500/50 dark:hover:bg-blue-500/20',
+                    isMyVote ? 'border-blue-400 bg-blue-100 dark:border-blue-500/50 dark:bg-blue-500/20'
+                             : 'border-blue-100 bg-white dark:border-blue-500/10 dark:bg-blue-950/20'
+                  )}
+                >
+                  <div className="mb-2 flex items-center justify-between gap-2">
+                    <span className={cn('text-sm', isMyVote ? 'font-semibold text-blue-700 dark:text-blue-200' : 'text-gray-700 dark:text-gray-200')}>{opt}</span>
+                    <div className="flex shrink-0 items-center gap-1.5">
+                      {isAI && <span className="rounded-full bg-violet-100 px-2 py-0.5 text-xs font-medium text-violet-600 dark:bg-violet-500/20 dark:text-violet-300">AI추천</span>}
+                      {isTop && !isAI && voteState.total_votes > 0 && <span className="rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-600 dark:bg-blue-500/20 dark:text-blue-300">1위</span>}
+                      {isMyVote && <CheckCircle2 size={12} className="text-blue-500" />}
+                      <span className="text-sm font-bold text-gray-700 dark:text-gray-200">{pct}%</span>
+                    </div>
+                  </div>
+                  <div className="h-1.5 w-full rounded-full bg-gray-100 dark:bg-white/10">
+                    <div className={cn('h-1.5 rounded-full transition-all duration-700',
+                      isAI ? 'bg-violet-500' : isTop && voteState.total_votes > 0 ? 'bg-blue-400' : 'bg-gray-200 dark:bg-white/20'
+                    )} style={{ width: `${pct}%` }} />
+                  </div>
+                  <p className="mt-1 text-right text-xs text-gray-400 dark:text-gray-500">{count}표</p>
+                </div>
+              );
+            })}
+          </div>
+
+          {!voteState.user_vote && voteState.is_owner && (
+            <p className="mt-3 text-center text-xs text-blue-500/60 dark:text-blue-400/50">자신의 결정에는 투표할 수 없어요</p>
+          )}
+          {!voteState.user_vote && !voteState.is_owner && !user && (
+            <p className="mt-3 text-center text-xs text-blue-500/60 dark:text-blue-400/50">투표하려면 로그인이 필요합니다</p>
+          )}
         </div>
       )}
 

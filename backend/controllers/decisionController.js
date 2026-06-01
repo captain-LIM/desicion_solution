@@ -339,6 +339,126 @@ async function getStats(req, res) {
   }
 }
 
+async function togglePublish(req, res) {
+  const { id } = req.params;
+  const userId = req.user.id;
+  try {
+    const [rows] = await pool.execute(
+      'SELECT is_public FROM decisions WHERE id = ? AND user_id = ?', [id, userId]
+    );
+    if (rows.length === 0) return res.status(404).json({ error: '결정을 찾을 수 없습니다.' });
+    const next = rows[0].is_public ? 0 : 1;
+    await pool.execute('UPDATE decisions SET is_public = ? WHERE id = ?', [next, id]);
+    res.json({ is_public: next });
+  } catch (err) {
+    res.status(500).json({ error: '처리 중 오류가 발생했습니다.' });
+  }
+}
+
+async function getCommunityFeed(req, res) {
+  const userId = req.user?.id || null;
+  try {
+    const [decisions] = await pool.execute(
+      `SELECT d.id, d.scenario, d.category, d.recommended_option, d.created_at,
+              (SELECT COUNT(*) FROM votes v WHERE v.decision_id = d.id) as total_votes
+       FROM decisions d
+       WHERE d.is_public = 1
+       ORDER BY d.created_at DESC
+       LIMIT 50`
+    );
+    for (const d of decisions) {
+      const [opts] = await pool.execute(
+        'SELECT option_text FROM options WHERE decision_id = ? ORDER BY order_index', [d.id]
+      );
+      d.options = opts.map((o) => o.option_text);
+      const [vc] = await pool.execute(
+        'SELECT option_text, COUNT(*) as count FROM votes WHERE decision_id = ? GROUP BY option_text', [d.id]
+      );
+      d.vote_counts = {};
+      for (const r of vc) d.vote_counts[r.option_text] = Number(r.count);
+      d.total_votes = Number(d.total_votes);
+      d.user_vote = null;
+      if (userId) {
+        const [mv] = await pool.execute(
+          'SELECT option_text FROM votes WHERE decision_id = ? AND user_id = ?', [d.id, userId]
+        );
+        if (mv.length > 0) d.user_vote = mv[0].option_text;
+      }
+    }
+    res.json(decisions);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: '커뮤니티를 불러오는 중 오류가 발생했습니다.' });
+  }
+}
+
+async function voteOnDecision(req, res) {
+  const { id } = req.params;
+  const { option_text } = req.body;
+  const userId = req.user.id;
+  if (!option_text) return res.status(400).json({ error: '선택지를 선택해주세요.' });
+  try {
+    const [rows] = await pool.execute(
+      'SELECT id, user_id, is_public FROM decisions WHERE id = ?', [id]
+    );
+    if (rows.length === 0) return res.status(404).json({ error: '결정을 찾을 수 없습니다.' });
+    if (!rows[0].is_public) return res.status(403).json({ error: '비공개 결정입니다.' });
+    if (rows[0].user_id === userId) return res.status(403).json({ error: '자신의 결정에는 투표할 수 없습니다.' });
+    const [opts] = await pool.execute('SELECT option_text FROM options WHERE decision_id = ?', [id]);
+    if (!opts.map((o) => o.option_text).includes(option_text)) {
+      return res.status(400).json({ error: '유효하지 않은 선택지입니다.' });
+    }
+    await pool.execute(
+      'INSERT INTO votes (decision_id, option_text, user_id) VALUES (?, ?, ?)', [id, option_text, userId]
+    );
+    const [vc] = await pool.execute(
+      'SELECT option_text, COUNT(*) as count FROM votes WHERE decision_id = ? GROUP BY option_text', [id]
+    );
+    const vote_counts = {};
+    let total_votes = 0;
+    for (const r of vc) { vote_counts[r.option_text] = Number(r.count); total_votes += Number(r.count); }
+    res.json({ success: true, vote_counts, total_votes, user_vote: option_text });
+  } catch (err) {
+    if (err.code === 'ER_DUP_ENTRY') return res.status(409).json({ error: '이미 투표했습니다.' });
+    console.error(err);
+    res.status(500).json({ error: '투표 중 오류가 발생했습니다.' });
+  }
+}
+
+async function getVoteResults(req, res) {
+  const { id } = req.params;
+  const userId = req.user?.id || null;
+  try {
+    const [rows] = await pool.execute(
+      'SELECT id, is_public, recommended_option, user_id FROM decisions WHERE id = ?', [id]
+    );
+    if (rows.length === 0) return res.status(404).json({ error: '결정을 찾을 수 없습니다.' });
+    const [vc] = await pool.execute(
+      'SELECT option_text, COUNT(*) as count FROM votes WHERE decision_id = ? GROUP BY option_text', [id]
+    );
+    const vote_counts = {};
+    let total_votes = 0;
+    for (const r of vc) { vote_counts[r.option_text] = Number(r.count); total_votes += Number(r.count); }
+    let user_vote = null;
+    if (userId) {
+      const [mv] = await pool.execute(
+        'SELECT option_text FROM votes WHERE decision_id = ? AND user_id = ?', [id, userId]
+      );
+      if (mv.length > 0) user_vote = mv[0].option_text;
+    }
+    res.json({
+      is_public: !!rows[0].is_public,
+      vote_counts,
+      total_votes,
+      user_vote,
+      is_owner: !!(userId && rows[0].user_id === userId),
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: '투표 결과를 불러오는 중 오류가 발생했습니다.' });
+  }
+}
+
 async function getInsights(req, res) {
   const userId = req.user.id;
   try {
@@ -479,4 +599,4 @@ async function getInsights(req, res) {
   }
 }
 
-module.exports = { createDecision, getHistory, getDecisionById, toggleBookmark, reviewDecision, getPendingReviews, getStats, deleteDecision, getInsights };
+module.exports = { createDecision, getHistory, getDecisionById, toggleBookmark, reviewDecision, getPendingReviews, getStats, deleteDecision, getInsights, togglePublish, getCommunityFeed, voteOnDecision, getVoteResults };
