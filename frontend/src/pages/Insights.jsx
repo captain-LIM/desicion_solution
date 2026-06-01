@@ -118,7 +118,7 @@ export default function Insights() {
   const notEnoughData = data.total < 3;
 
   return (
-    <main className="mx-auto max-w-2xl px-4 py-12">
+    <main className="mx-auto max-w-5xl px-6 py-10">
       {/* 헤더 */}
       <div className="mb-10 text-center">
         <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-violet-400/40 bg-violet-50 px-4 py-1.5 text-sm text-violet-600 dark:border-violet-500/30 dark:bg-violet-500/10 dark:text-violet-300">
@@ -162,7 +162,7 @@ export default function Insights() {
       )}
 
       {/* 요약 수치 */}
-      <div className="mb-6 grid grid-cols-2 gap-4">
+      <div className="mb-6 grid grid-cols-2 gap-4 lg:grid-cols-4">
         <StatCard
           label="전체 만족도"
           value={data.overall_satisfaction_rate !== null ? `${data.overall_satisfaction_rate}%` : '—'}

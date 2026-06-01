@@ -148,7 +148,7 @@ export default function Result() {
   const card = 'rounded-2xl border border-gray-200 bg-white p-6 dark:border-white/10 dark:bg-white/5';
 
   return (
-    <main className="mx-auto max-w-2xl px-4 py-12">
+    <main className="mx-auto max-w-2xl px-6 py-10">
       <div className="mb-8 text-center">
         <div className="mb-4 inline-flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-violet-500 to-purple-700 shadow-xl shadow-violet-500/30">
           <Sparkles size={30} className="text-white" />

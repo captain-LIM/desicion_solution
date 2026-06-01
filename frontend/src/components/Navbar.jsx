@@ -38,7 +38,7 @@ export default function Navbar() {
   ];
 
   return (
-    <nav className="sticky top-0 z-50 border-b border-gray-200 bg-[#f8f8fc]/80 backdrop-blur-md dark:border-white/10 dark:bg-[#0f0f13]/80 transition-colors duration-200">
+    <nav className="lg:hidden sticky top-0 z-50 border-b border-gray-200 bg-[#f8f8fc]/80 backdrop-blur-md dark:border-white/10 dark:bg-[#0f0f13]/80 transition-colors duration-200">
       <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-4">
         {/* 로고 */}
         <Link to="/" className="flex items-center gap-2 group">

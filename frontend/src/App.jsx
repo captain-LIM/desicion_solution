@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
 import Navbar from './components/Navbar';
+import Sidebar from './components/Sidebar';
 import ProtectedRoute from './components/ProtectedRoute';
 import Home from './pages/Home';
 import Result from './pages/Result';
@@ -15,20 +16,37 @@ function Layout() {
   const { pathname } = useLocation();
   const hideNav = pathname.startsWith('/share/') || pathname === '/login' || pathname === '/register';
 
+  const routes = (
+    <Routes>
+      <Route path="/login" element={<Login />} />
+      <Route path="/register" element={<Register />} />
+      <Route path="/share/:id" element={<Share />} />
+      <Route path="/" element={<ProtectedRoute><Home /></ProtectedRoute>} />
+      <Route path="/result" element={<ProtectedRoute><Result /></ProtectedRoute>} />
+      <Route path="/history" element={<ProtectedRoute><History /></ProtectedRoute>} />
+      <Route path="/stats" element={<ProtectedRoute><Stats /></ProtectedRoute>} />
+      <Route path="/insights" element={<ProtectedRoute><Insights /></ProtectedRoute>} />
+      <Route path="/community" element={<ProtectedRoute><Community /></ProtectedRoute>} />
+    </Routes>
+  );
+
+  if (hideNav) {
+    return (
+      <div className="min-h-screen bg-[#f8f8fc] text-gray-900 dark:bg-[#0f0f13] dark:text-white transition-colors duration-200">
+        {routes}
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen bg-[#f8f8fc] text-gray-900 dark:bg-[#0f0f13] dark:text-white transition-colors duration-200">
-      {!hideNav && <Navbar />}
-      <Routes>
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
-        <Route path="/share/:id" element={<Share />} />
-        <Route path="/" element={<ProtectedRoute><Home /></ProtectedRoute>} />
-        <Route path="/result" element={<ProtectedRoute><Result /></ProtectedRoute>} />
-        <Route path="/history" element={<ProtectedRoute><History /></ProtectedRoute>} />
-        <Route path="/stats" element={<ProtectedRoute><Stats /></ProtectedRoute>} />
-        <Route path="/insights" element={<ProtectedRoute><Insights /></ProtectedRoute>} />
-        <Route path="/community" element={<ProtectedRoute><Community /></ProtectedRoute>} />
-      </Routes>
+    <div className="flex h-screen overflow-hidden bg-[#f8f8fc] text-gray-900 dark:bg-[#0f0f13] dark:text-white transition-colors duration-200">
+      <Sidebar />
+      <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
+        <Navbar />
+        <div className="flex-1 overflow-y-auto">
+          {routes}
+        </div>
+      </div>
     </div>
   );
 }

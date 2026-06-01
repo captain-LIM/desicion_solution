@@ -177,7 +177,7 @@ export default function Community() {
   );
 
   return (
-    <main className="mx-auto max-w-2xl px-4 py-12">
+    <main className="mx-auto max-w-3xl px-6 py-10">
       {/* 헤더 */}
       <div className="mb-10 text-center">
         <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-blue-400/40 bg-blue-50 px-4 py-1.5 text-sm text-blue-600 dark:border-blue-500/30 dark:bg-blue-500/10 dark:text-blue-300">

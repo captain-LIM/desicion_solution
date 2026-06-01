@@ -55,7 +55,7 @@ export default function Home() {
   return (
     <>
       <ReviewBanner />
-      <main className="mx-auto max-w-2xl px-4 py-12">
+      <main className="mx-auto max-w-2xl px-6 py-10">
         {/* 헤더 */}
         <div className="mb-10 text-center">
           <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-violet-400/40 bg-violet-50 px-4 py-1.5 text-sm text-violet-600 dark:border-violet-500/30 dark:bg-violet-500/10 dark:text-violet-300">

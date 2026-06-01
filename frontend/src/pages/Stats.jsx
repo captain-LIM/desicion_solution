@@ -83,7 +83,7 @@ export default function Stats() {
   const topCat = CATEGORIES.find((c) => c.value === stats.top_category_this_month);
 
   return (
-    <main className="mx-auto max-w-3xl px-4 py-12">
+    <main className="mx-auto max-w-5xl px-6 py-10">
       {/* 헤더 */}
       <div className="mb-8">
         <h1 className="text-2xl font-bold text-gray-900 dark:text-white">결정 통계</h1>
@@ -99,7 +99,7 @@ export default function Stats() {
       ) : (
         <div className="space-y-6">
           {/* 요약 카드 */}
-          <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+          <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
             <StatCard icon={Brain} label="총 결정 수" value={stats.total} sub="전체 기간" color="violet" />
             <StatCard icon={CalendarDays} label="이번 달" value={stats.this_month} sub="이달 결정 수" color="blue" />
             <StatCard
@@ -166,7 +166,7 @@ export default function Stats() {
 
           {/* 카테고리 분석 */}
           {categoryData.length > 0 && (
-            <div className="grid gap-4 sm:grid-cols-2">
+            <div className="grid gap-4 lg:grid-cols-2">
               {/* 파이 차트 */}
               <div className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-white/10 dark:bg-white/5">
                 <p className="mb-4 text-sm font-semibold text-gray-700 dark:text-gray-300">카테고리 분포</p>
