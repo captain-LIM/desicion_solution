@@ -23,7 +23,7 @@ app.get('/health', (req, res) => res.json({ status: 'ok' }));
 // 프로덕션: React 빌드 파일 서빙
 if (process.env.NODE_ENV === 'production') {
   app.use(express.static(path.join(__dirname, '../frontend/dist')));
-  app.get('*', (req, res) => {
+  app.get('/{*path}', (req, res) => {
     res.sendFile(path.join(__dirname, '../frontend/dist/index.html'));
   });
 }
