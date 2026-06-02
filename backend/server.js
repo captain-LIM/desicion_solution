@@ -1,5 +1,6 @@
 const express = require('express');
 const cors = require('cors');
+const path = require('path');
 require('dotenv').config();
 
 const decisionsRouter = require('./routes/decisions');
@@ -7,7 +8,7 @@ const authRouter = require('./routes/auth');
 
 const app = express();
 
-app.use(cors({ origin: 'http://localhost:5173' }));
+app.use(cors());
 app.use(express.json({ type: 'application/json' }));
 app.use((req, res, next) => {
   res.setHeader('Content-Type', 'application/json; charset=utf-8');
@@ -18,6 +19,14 @@ app.use('/api/auth', authRouter);
 app.use('/api/decisions', decisionsRouter);
 
 app.get('/health', (req, res) => res.json({ status: 'ok' }));
+
+// 프로덕션: React 빌드 파일 서빙
+if (process.env.NODE_ENV === 'production') {
+  app.use(express.static(path.join(__dirname, '../frontend/dist')));
+  app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, '../frontend/dist/index.html'));
+  });
+}
 
 const PORT = process.env.PORT || 4000;
 app.listen(PORT, () => {
