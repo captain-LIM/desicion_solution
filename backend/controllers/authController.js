@@ -31,7 +31,7 @@ async function register(req, res) {
     const user = { id: result.insertId, email, name };
     res.status(201).json({ token: generateToken(user), user });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: err.message, code: err.code, detail: String(err) });
   }
 }
 
