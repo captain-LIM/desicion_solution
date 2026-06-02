@@ -16,6 +16,16 @@ app.use('/api/decisions', decisionsRouter);
 
 app.get('/health', (req, res) => res.json({ status: 'ok' }));
 
+app.get('/debug-db', async (req, res) => {
+  const pool = require('./config/db');
+  try {
+    const [rows] = await pool.execute('SELECT 1 as ok');
+    res.json({ connected: true, mysql_url_set: !!process.env.MYSQL_URL, url_preview: (process.env.MYSQL_URL || '').replace(/:([^:@]+)@/, ':***@') });
+  } catch (err) {
+    res.json({ connected: false, code: err.code, message: err.message, mysql_url_set: !!process.env.MYSQL_URL, url_preview: (process.env.MYSQL_URL || '').replace(/:([^:@]+)@/, ':***@') });
+  }
+});
+
 // 프로덕션: React 빌드 파일 서빙
 if (process.env.NODE_ENV === 'production') {
   app.use(express.static(path.join(__dirname, '../frontend/dist')));
