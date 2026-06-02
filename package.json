@@ -1,0 +1,11 @@
+{
+  "name": "decision-solution",
+  "version": "1.0.0",
+  "scripts": {
+    "build": "npm --prefix frontend install && npm --prefix frontend run build && npm --prefix backend install",
+    "start": "NODE_ENV=production node backend/server.js"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
