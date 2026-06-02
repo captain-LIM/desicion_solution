@@ -16,14 +16,16 @@ app.use('/api/decisions', decisionsRouter);
 
 app.get('/health', (req, res) => res.json({ status: 'ok' }));
 
-app.get('/debug-db', async (req, res) => {
-  const pool = require('./config/db');
-  try {
-    const [rows] = await pool.execute('SELECT 1 as ok');
-    res.json({ connected: true, mysql_url_set: !!process.env.MYSQL_URL, url_preview: (process.env.MYSQL_URL || '').replace(/:([^:@]+)@/, ':***@') });
-  } catch (err) {
-    res.json({ connected: false, code: err.code, message: err.message, mysql_url_set: !!process.env.MYSQL_URL, url_preview: (process.env.MYSQL_URL || '').replace(/:([^:@]+)@/, ':***@') });
-  }
+app.get('/debug-db', (req, res) => {
+  res.json({
+    MYSQL_URL: process.env.MYSQL_URL ? process.env.MYSQL_URL.replace(/:([^:@]+)@/, ':***@') : 'NOT SET',
+    DB_HOST: process.env.DB_HOST || 'NOT SET',
+    DB_PORT: process.env.DB_PORT || 'NOT SET',
+    DB_USER: process.env.DB_USER || 'NOT SET',
+    DB_NAME: process.env.DB_NAME || 'NOT SET',
+    DB_PASSWORD: process.env.DB_PASSWORD ? 'SET' : 'NOT SET',
+    NODE_ENV: process.env.NODE_ENV || 'NOT SET',
+  });
 });
 
 // 프로덕션: React 빌드 파일 서빙
